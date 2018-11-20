@@ -1,17 +1,24 @@
 package types
 
+trait Semigroup[A] {
+  /* Associativity: ∀ a b c, op(op(a, b), c) = op(a, op(b, c)). */
+ def op(a1: A, a2: A): A
+}
+
+object Semigroup {
+  def apply[A](implicit s: Semigroup[A]): Semigroup[A] = s
+}
+
+trait Monoid[A] extends Semigroup[A] {
+  /* Identity element: ∀ a, op(id, a) = op(a, id) = a. */
+ def id: A
+}
+
+object Monoid {
+  def apply[A](implicit m: Monoid[A]): Monoid[A] = m
+}
+
 object Monoids {
-  trait Monoid[A] {
-    /* Associativity: ∀ a b c, op(op(a, b), c) = op(a, op(b, c)). */
-    def op(a1: A, a2: A): A
-    /* Identity element: ∀ a, op(id, a) = op(a, id) = a. */
-    def id: A
-  }
-
-  object Monoid {
-    def apply[A](implicit m: Monoid[A]): Monoid[A] = m
-  }
-
   def stringMonoid = new Monoid[String] {
     def op(a1: String, a2: String) = a1 + a2
     def id = ""
@@ -46,11 +53,11 @@ object Monoids {
 
   /* Exercise 10.2 */
 
-  def optionMonoid[A: Monoid] = new Monoid[Option[A]] {
+  def optionMonoid[A: Semigroup] = new Monoid[Option[A]] {
     def op(a1: Option[A], a2: Option[A]) = (a1, a2) match {
-      case (Some(v1), Some(v2)) => Some(Monoid[A].op(v1, v2))
-      case (Some(v1), _) => Some(Monoid[A].op(v1, Monoid[A].id))
-      case (_, Some(v2)) => Some(Monoid[A].op(Monoid[A].id, v2))
+      case (Some(v1), Some(v2)) => Some(Semigroup[A].op(v1, v2))
+      case (Some(v1), _) => Some(v1)
+      case (_, Some(v2)) => Some(v2)
       case (_, _) => None
     }
     def id = None
