@@ -78,7 +78,20 @@ object Monoids {
   def concatenate[A](as: List[A], m: Monoid[A]): A =
     as.foldLeft(m.id)(m.op)
 
+  /* Exercise 10.5 */
+
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
     as.foldLeft(m.id)((acc, x) => m.op(acc, f(x)))
+
+  /* Exercise 10.6 */
+
+  def foldMap_[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
+    as.foldRight(m.id)((x, acc) => m.op(acc, f(x)))
+
+  def foldRight[A, B](as: List[A])(acc: B)(f: (A, B) => B): B =
+    foldMap(as, endoMonoid[B])(f.curried)(acc)
+
+  def foldLeft[A, B](as: List[A])(acc: B)(f: (B, A) => B): B =
+    foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(acc)
 }
 
