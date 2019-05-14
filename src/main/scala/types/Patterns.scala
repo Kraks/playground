@@ -157,4 +157,106 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   final def sequence[G[_]: Applicative, A](fga: F[G[A]]): G[F[A]] = ???
 }
 
+/* Natural numbers */
 
+trait Natural { self =>
+  def fold[Z](zero: => Z, succ: Z => Z): Z
+  def succ: Natural = new Natural {
+    def fold[Z](zero: => Z, succ: Z => Z): Z = succ(self.fold(zero, succ))
+  }
+  def +(that: Natural): Natural = new Natural {
+    def fold[Z](zero: => Z, succ: Z => Z): Z = that.fold[Natural](self, _.succ).fold[Z](zero, succ)
+  }
+  def *(that: Natural): Natural = new Natural {
+    def fold[Z](zero: => Z, succ: Z => Z): Z = that.fold[Natural](Natural.zero, _ + self).fold[Z](zero, succ)
+  }
+  def isZero: Boolean = fold[Boolean](true, _ => false)
+  def toInt: Int = fold[Int](0, _ + 1)
+  override def toString = toInt.toString
+}
+object Natural {
+  val zero = new Natural {
+    def fold[Z](zero: => Z, succ: Z => Z):Z = zero
+  }
+  def of(v: Int): Natural = if (v == 0) zero else of(v-1).succ
+}
+
+/* Optics */
+
+/* Lenses provide a way to focus on a single term inside a product */
+
+abstract class PLens[S, T, A, B] extends Serializable { self => 
+  def get(s: S): A
+  def set(b: B): S => T
+  def modifyF[F[_]: Functor](f: A => F[B])(s: S): F[T]
+  def modify(f: A => B): S => T
+}
+object Lens {
+  type Lens[S, A] = PLens[S, S, A, A]
+}
+
+/* Prisms provide a way to focus on a single term inside a coproduct (sum) */
+
+abstract class PPrism[S, T, A, B] extends Serializable { self =>
+  def getOrModify(s: S): T \/ A
+  def reverseGet(b: B): T
+  def getOption(s: S): Option[A]
+}
+object Prism {
+  type Prism[S, A] = PPrism[S, S, A, A]
+}
+
+/* Traversals provide a way to focus on zero or more elements */
+
+abstract class PTraversal[S, T, A, B] extends Serializable { self =>
+  def modifyF[F[_]: Applicative](f: A => F[B])(s: S): F[T]
+}
+object Traversable {
+  type Traversable[S, A] = PTraversal[S, S, A, A]
+}
+
+/* Folds provide a way to fold over zero or more values in a larger structure */
+
+abstract class Fold[S, A] extends Serializable { self =>
+  def foldMap[M: Monoid](f: A => M)(s: S): M
+}
+
+/* Getters provide a way to get a part of a larger structure */
+
+abstract class Getter[S, A] extends Serializable { self =>
+  def get(s: S): A
+}
+
+/* Setters provide a way to modify and set a part of a larget structure */
+
+abstract class PSetter[S, T, A, B] extends Serializable { self =>
+  def modify(f: A => B): S => T
+  def set(b: B): S => T
+}
+object Setter {
+  type Setter[S, A] = PSetter[S, S, A, A]
+}
+
+/* Isos provide an isomorphism between an A in S and a B in T */
+
+abstract class PIso[S, T, A, B] extends Serializable { self =>
+  def get(s: S): A
+  def reverseGet(b: B): T
+  def reverse: PIso[B, A, T, S]
+}
+object Iso {
+  type Iso[S, A] = PIso[S, S, A, A]
+}
+
+/* Optionals provide either a way to get an A in S, or to get a T, and a way to set a B in S to get a T. */
+
+abstract class POptional[S, T, A, B] extends Serializable { self =>
+  def getOrModify(s: S): T \/ A
+  def set(b: B): S => T
+  def getOption(s: S): Option[A]
+  def modifyF[F[_]: Applicative](f: A => F[B])(s: S): F[T]
+  def modify(f: A => B): S => T
+}
+object Optional {
+  type Optional[S, A] = POptional[S, S, A, A]
+}
