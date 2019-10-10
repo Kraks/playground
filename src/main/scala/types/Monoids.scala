@@ -152,6 +152,38 @@ object Monoids {
       case Part(l, w, r) => unstub(l) + w + unstub(r)
     }
   }
+
+  /* Exercise 10.16 */
+
+  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] = new Monoid[(A, B)] {
+    val id = (A.id, B.id)
+    def op(p1: (A,B), p2: (A,B)): (A,B) = (A.op(p1._1, p2._1), B.op(p1._2, p2._2))
+  }
+
+  def mapMergeMonoid[K,V](V: Monoid[V]): Monoid[Map[K,V]] = new Monoid[Map[K,V]] {
+    def id = Map[K,V]()
+    def op(a: Map[K,V], b: Map[K,V]): Map[K,V] = {
+      (a.keySet ++ b.keySet).foldLeft(id) { (acc, k) =>
+        acc.updated(k, V.op(a.getOrElse(k, V.id),
+                            b.getOrElse(k, V.id)))
+      }
+    }
+  }
+
+  /* Exercise 10.17 */
+
+  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] = new Monoid[A => B] {
+    def id = a => B.id
+    def op(f1: A=>B, f2: A=>B): A=>B = { case
+      a => B.op(f1(a), f2(a))
+    }
+  }
+
+  /* Exercise 10.18 */
+
+  def bag[A](as: IndexedSeq[A]): Map[A, Int] = {
+    foldMapV(as, mapMergeMonoid[A, Int](intAdd))(a => Map(a -> 1))
+  }
 }
 
 import Monoids._
