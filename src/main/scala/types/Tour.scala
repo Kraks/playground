@@ -281,6 +281,37 @@ object CPSInterp {
   }
 }
 
+object CPS2Interp {
+  trait Expr
+  case class Lit(i: Int) extends Expr
+  case class Var(x: String) extends Expr
+  case class Lam(x: String, body: Expr) extends Expr
+  case class App(e1: Expr, e2: Expr) extends Expr
+  case class Aop(op: String, e1: Expr, e2: Expr) extends Expr
+  case class Letcc(k: String, e: Expr) extends Expr
+  case class Reset(e: Expr) extends Expr
+  case class Shift(k: String, e: Expr) extends Expr
+
+  trait Value
+  case class IntV(i: Int) extends Value
+  case class FunV(λ: Lam, ρ: Env) extends Value
+  //case class ContV(k: ???) extends Value
+
+  type Env = Map[String, Value]
+  type MCont = Value ⇒ Value
+
+  def interp(e: Expr, ρ: Env)(k: (Value, MCont) ⇒ Value)(r: Value ⇒ Value): Value = e match {
+    case Lit(i) ⇒ k(IntV(i), r)
+    case Var(x) ⇒ k(ρ(x), r)
+    case Lam(x, body) ⇒ k(FunV(Lam(x, body), ρ), r)
+    case Aop("+", e1, e2) ⇒ interp(e1, ρ)({
+      case (IntV(i1), r) ⇒ interp(e2, ρ)({
+        case (IntV(i2), r) ⇒ k(IntV(i1+i2), r)
+      })(r)
+    })(r)
+  }
+}
+
 object PartialEval {
   trait Value
   case class IntV(i: Int) extends Value
