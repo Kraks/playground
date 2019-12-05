@@ -295,20 +295,64 @@ object CPS2Interp {
   trait Value
   case class IntV(i: Int) extends Value
   case class FunV(λ: Lam, ρ: Env) extends Value
-  //case class ContV(k: ???) extends Value
+  case class ContV(k: Cont ⇒ Cont) extends Value
 
   type Env = Map[String, Value]
   type MCont = Value ⇒ Value
+  type Cont = (Value, MCont) ⇒ Value
 
-  def interp(e: Expr, ρ: Env)(k: (Value, MCont) ⇒ Value)(r: Value ⇒ Value): Value = e match {
+  def interp(e: Expr, ρ: Env)(k: Cont)(r: MCont): Value = e match {
     case Lit(i) ⇒ k(IntV(i), r)
     case Var(x) ⇒ k(ρ(x), r)
     case Lam(x, body) ⇒ k(FunV(Lam(x, body), ρ), r)
-    case Aop("+", e1, e2) ⇒ interp(e1, ρ)({
-      case (IntV(i1), r) ⇒ interp(e2, ρ)({
-        case (IntV(i2), r) ⇒ k(IntV(i1+i2), r)
+    case Aop("+", e1, e2) ⇒
+      interp(e1, ρ)({
+        case (IntV(i1), r) ⇒ interp(e2, ρ)({
+          case (IntV(i2), r) ⇒ k(IntV(i1+i2), r)
+        })(r)
       })(r)
-    })(r)
+    case App(e1, e2) ⇒
+      interp(e1, ρ)({
+        case (FunV(Lam(x, body), ρ_*), r) ⇒
+          interp(e2, ρ)({
+            case (v, r) ⇒ interp(body, ρ_* + (x → v))(k)(r)
+          })(r)
+        case (ContV(k_*), r) ⇒ interp(e2, ρ)(k_*(k))(r)
+      })(r)
+    case Letcc(x, e) ⇒
+      val ρ_* = ρ + (x → ContV((k_*) ⇒ { case (v, r) ⇒ k(v, r) }))
+      interp(e, ρ_*)(k)(r)
+    case Reset(e) ⇒
+      interp(e, ρ)({ case (v, r) => r(v) })(v => k(v, r))
+    case Shift(x, e) ⇒
+      val ρ_* = ρ + (x → ContV((k_*) ⇒ { case (v, r) ⇒ k(v, z ⇒ k_*(z, r)) }))
+      interp(e, ρ_*)({ case (v, r) ⇒ r(v) })(r)
+  }
+
+  def run(e: Expr): Value = interp(e, Map())({ case (v, r) ⇒ r(v) })(x ⇒ x)
+
+  def main(args: Array[String]) = {
+    val e1 = Aop("+", Lit(1),
+      Letcc("k1", Aop("+", Lit(2), Aop("+", Lit(3),
+        Letcc("k2", Aop("+", Lit(4),
+          App(Var("k1"), Lit(5))))))))
+    assert(run(e1) == IntV(6))
+
+    val e2 = Aop("+", Lit(1),
+      Letcc("k1", Aop("+", Lit(2), Aop("+", Lit(3),
+        Letcc("k2", Aop("+", Lit(4),
+          App(Var("k2"), Lit(5))))))))
+    assert(run(e2) == IntV(11))
+
+    val e3 = Aop("+", Lit(5),
+      Reset(Aop("+", Lit(2),
+        Shift("k", Aop("+", Lit(1), App(Var("k"), App(Var("k"), Lit(3))))))))
+    assert(run(e3) == IntV(13))
+
+    val e4 = Aop("+", Lit(5),
+      Reset(Aop("+", Lit(3),
+        Shift("k", Aop("+", App(Var("k"), Lit(0)), App(Var("k"), Lit(1)))))))
+    assert(run(e4) == IntV(12))
   }
 }
 
