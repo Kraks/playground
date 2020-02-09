@@ -32,22 +32,18 @@ object CPSExamples {
     }
 
   def quicksort(xs: List[Int]): List[Int] = 
-    xs match {
-      case Nil => Nil
-      case x :: xs =>
-        val smaller = quicksort(xs.filter(_ <= x))
-        val bigger = quicksort(xs.filter(_ > x))
-        smaller ++ List(x) ++ bigger
+    if (xs.isEmpty) Nil
+    else {
+      val smaller = quicksort(xs.tail.filter(_ <= xs.head))
+      val bigger = quicksort(xs.tail.filter(_ > xs.head))
+      smaller ++ List(xs.head) ++ bigger
     }
 
   def quicksort_cps(xs: List[Int], k: List[Int] => List[Int]): List[Int] =
-    xs match {
-      case Nil => k(Nil)
-      case x :: xs =>
-        quicksort_cps(xs.filter(_ <= x), smaller =>
-          quicksort_cps(xs.filter(_ > x), bigger =>
-            k(smaller ++ List(x) ++ bigger)))
-    }
+    if (xs.isEmpty) k(Nil)
+    else quicksort_cps(xs.tail.filter(_ <= xs.head), smaller =>
+           quicksort_cps(xs.tail.filter(_ > xs.head), bigger =>
+             k(smaller ++ List(xs.head) ++ bigger)))
 
   def main(args: Array[String]) = {
     println(power_cps(2, 4, x => x))
