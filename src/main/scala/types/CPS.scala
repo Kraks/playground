@@ -45,6 +45,29 @@ object CPSExamples {
            quicksort_cps(xs.tail.filter(_ > xs.head), bigger =>
              k(smaller ++ List(xs.head) ++ bigger)))
 
+  abstract class Tree
+  case class Leaf() extends Tree
+  case class Node(l: Tree, v: Int, r: Tree) extends Tree
+
+  def treeFold[T](t: Tree, e: T, f: (T, Int, T) => T): T= t match {
+    case Leaf() => e
+    case Node(l, v, r) => f(treeFold(l, e, f), v, treeFold(r, e, f))
+  }
+
+  def treeSize(t: Tree) = treeFold[Int](t, 0, { case (lv, v, rv) => 1 + lv + rv })
+  def treeDepth(t: Tree) = treeFold[Int](t, 0, { case (lv, v, rv) => 1 + math.max(lv, rv) })
+  def treeReflect(t: Tree) = treeFold[Tree](t, Leaf(), { case (lv, v, rv) => Node(rv, v, lv) })
+
+  def treeFold_cps[T](t: Tree, e: T, f: (T, Int, T) => (T => T) => T, k: T => T): T = t match {
+    case Leaf() => k(e)
+    case Node(l, v, r) => 
+      treeFold_cps[T](l, e, f, lv => 
+        treeFold_cps[T](r, e, f, rv => 
+          f(lv, v, rv)(k)))
+  }
+
+  def anotherTreeSize(t: Tree) = treeFold_cps[Int](t, 0, { case (lv, v, rv) => k => k(1 + lv + rv) }, t => t)
+
   def main(args: Array[String]) = {
     println(power_cps(2, 4, x => x))
     println(power_cps(3, 3, x => x))
