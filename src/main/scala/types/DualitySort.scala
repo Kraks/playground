@@ -123,3 +123,39 @@ object Sec3 {
     println(bubbleSort2(unsorted))
   }
 }
+
+object Sec4 {
+  import Sec2._
+  import Sec3._
+
+  implicit class Fun1Ops[A, B](f: A => B) {
+    def △[C](g: A => C): A => (B, C) = a => (f(a), g(a))
+    def ▽[C](g: C => B): Either[A, C] => B = {
+      case Left(a) => f(a)
+      case Right(c) => g(c)
+    }
+  }
+
+  def f: Int => Int = x => x + 1
+  def g: Int => String = x => x.toString
+  def h: Int => (Int, String) = f △ g
+
+  def id[A]: A => A = a => a
+
+  // Paramorphism
+
+  def para[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff =>
+    // id △ para(f): Fix[F] => (Fix[F], A)
+    f(ff.out.map(id △ para(f)))
+
+  import scala.collection.immutable.{List => SList}
+  def suf: List[(Fix[List], SList[Fix[List]])] => SList[Fix[List]] = {
+    case Nil => SList()
+    case Cons(n, (l, ls)) => l::ls
+  }
+  def suffixes: Fix[List] => SList[Fix[List]] = para(suf)
+
+  def para2[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff => ???
+
+  // Apomorphism
+}
