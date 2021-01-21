@@ -1,12 +1,11 @@
 package duality.sort
 
 object Sec1 {
-  // foldRight also works here
-  def insertSort(xs: List[Int]): List[Int] = xs.foldLeft(List[Int]())(insert)
-  def insert(xs: List[Int], x: Int): List[Int] = {
+  def insert(x: Int, xs: List[Int]): List[Int] = {
     val (ys, zs) = xs.partition(_ <= x)
     ys ++ List(x) ++ zs
   }
+  def insertSort(xs: List[Int]): List[Int] = xs.foldRight(List[Int]())(insert)
 
   def unfoldRight[A, B](f: B => Option[(A, B)], b: B): List[A] = ???
 
@@ -14,7 +13,6 @@ object Sec1 {
     val (before, atAndAfter) = xs.span(_ != x)
     before ++ atAndAfter.drop(1)
   }
-
   def select(xs: List[Int]): Option[(Int, List[Int])] =
     if (xs.isEmpty) None 
     else {
@@ -22,7 +20,6 @@ object Sec1 {
       val ys = delete(xs, min)
       Some((min, ys))
     }
-
   def selectSort(xs: List[Int]): List[Int] = unfoldRight(select, xs)
 
   def main(args: Array[String]): Unit = {
@@ -32,34 +29,41 @@ object Sec1 {
 }
 
 object Sec2 {
+  // two-level types (Sheard & Pasalic 2004)
+  // Level 1: describe the shape of the data
   abstract class List[+S]
   case object Nil extends List[Nothing]
   case class Cons[S](hd: Int, tl: S) extends List[S]
 
+  // A fixed-point combinator/case class to build recursion
   case class Fix[F[_]](out: F[Fix[F]])
-  
+
+  // Level 2: describe the recursion
+  type Lst = Fix[List]
+
+  // Examples
   val xs: Fix[List] = Fix[List](Nil)
   val ys: Fix[List] = Fix[List](Cons[Fix[List]](1, Fix[List](Nil)))
   val zs: Fix[List] = Fix[List](Cons(1, Fix[List](Cons(2, Fix[List](Cons(3, Fix[List](Nil)))))))
   val unsorted: Fix[List] = Fix[List](Cons(3, Fix[List](Cons(2, Fix[List](Cons(1, Fix[List](Nil)))))))
 
+  // Basic functor definitions/operations
   trait Functor[F[_]] {
     def map[A, B](f: A => B)(fa: F[A]): F[B]
   }
-
   object Functor {
     def apply[F[_]](implicit F: Functor[F]) = F
   }
+  implicit class FunctorOps[F[_]: Functor, A](xs: F[A]) {
+    def map[B](f: A => B): F[B] = Functor[F].map(f)(xs)
+  }
 
+  // Our List is a functor
   implicit val ListFunctor = new Functor[List] {
     def map[A, B](f: A => B)(fa: List[A]): List[B] = fa match {
       case Nil => Nil
       case Cons(hd, tl) => Cons(hd, f(tl))
     }
-  }
-
-  implicit class FunctorOps[F[_]: Functor, A](xs: F[A]) {
-    def map[B](f: A => B): F[B] = Functor[F].map(f)(xs)
   }
 
   def fold[F[_]: Functor, A](f: F[A] => A)(ff: Fix[F]): A =
@@ -136,6 +140,7 @@ object Sec4 {
     }
   }
 
+  // Examples
   def f: Int => Int = x => x + 1
   def g: Int => String = x => x.toString
   def h: Int => (Int, String) = f △ g
@@ -143,11 +148,11 @@ object Sec4 {
   def id[A]: A => A = a => a
 
   // Paramorphism
-
   def para[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff =>
     // id △ para(f): Fix[F] => (Fix[F], A)
     f(ff.out.map(id △ para(f)))
 
+  // Compute all proper suffixes of a list
   import scala.collection.immutable.{List => SList}
   def suf: List[(Fix[List], SList[Fix[List]])] => SList[Fix[List]] = {
     case Nil => SList()
@@ -155,7 +160,19 @@ object Sec4 {
   }
   def suffixes: Fix[List] => SList[Fix[List]] = para(suf)
 
-  def para2[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff => ???
+  // Define paramorphism using fold
+  def para_alter[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff => {
+    val g: F[(Fix[F], A)] => Fix[F] = ff => Fix[F](ff.map(_._1))
+    fold(g △ f)(ff)._2
+  }
 
-  // Apomorphism
+  // Apomorphism ~ unfold, allows early termination of computation
+  def apo[F[_]: Functor, A](f: A => F[Either[Fix[F], A]]): A => Fix[F] = a =>
+    // apo(f): A => Fix[F]
+    // id ▽ apo(f): Either[Fix[F], A] => Fix[F]
+    Fix[F](f(a).map(id ▽ apo(f)))
+
+  /* 4.1 */
+
+
 }
