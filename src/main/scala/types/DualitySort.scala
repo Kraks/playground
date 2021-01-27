@@ -1,18 +1,30 @@
-package duality.sort
+package duality.of.sort
 
 object Sec1 {
+  // insert an element `x` into an already sorted list `xs`
   def insert(x: Int, xs: List[Int]): List[Int] = {
     val (ys, zs) = xs.partition(_ <= x)
     ys ++ List(x) ++ zs
   }
+  // insertion sort is the fold over the list with `insert`
   def insertSort(xs: List[Int]): List[Int] = xs.foldRight(List[Int]())(insert)
 
+  // Example
+  val xs = List(1, 3, 2, 10, 4, 3, 5)
+  println(insertSort(xs))
+
+  // unfold is a recursion scheme dual to fold, used to produce data, instead of consuming data.
+  // `f : B => Option[(A, B)]` defines how to produce a list from a seed `B`,
+  //   None corresponds to the empty list, Some((a, b)) corresponds to a list with element `a`
+  //   and a new seed `b`.
   def unfoldRight[A, B](f: B => Option[(A, B)], b: B): List[A] = ???
 
-  def delete[T](xs: List[T], x: T): List[T] = {
-    val (before, atAndAfter) = xs.span(_ != x)
-    before ++ atAndAfter.drop(1)
-  }
+  // selection sort picks the smallest element of an input list, and adds this element
+  // to the result list (at its head).
+  def selectSort(xs: List[Int]): List[Int] = unfoldRight(select, xs)
+
+  // `select` the smallest element from an unordered list `xs`,
+  // removes from the original list.
   def select(xs: List[Int]): Option[(Int, List[Int])] =
     if (xs.isEmpty) None 
     else {
@@ -20,12 +32,12 @@ object Sec1 {
       val ys = delete(xs, min)
       Some((min, ys))
     }
-  def selectSort(xs: List[Int]): List[Int] = unfoldRight(select, xs)
-
-  def main(args: Array[String]): Unit = {
-    val xs = List(1, 3, 2, 10, 4, 3, 5)
-    println(insertSort(xs))
+  def delete[T](xs: List[T], x: T): List[T] = {
+    val (before, atAndAfter) = xs.span(_ != x)
+    before ++ atAndAfter.drop(1)
   }
+
+  def main(args: Array[String]): Unit = ()
 }
 
 object Sec2 {
@@ -47,7 +59,7 @@ object Sec2 {
   val zs: Fix[List] = Fix[List](Cons(1, Fix[List](Cons(2, Fix[List](Cons(3, Fix[List](Nil)))))))
   val unsorted: Fix[List] = Fix[List](Cons(3, Fix[List](Cons(2, Fix[List](Cons(1, Fix[List](Nil)))))))
 
-  // Basic functor definitions/operations
+  // Functor definitions/operations
   trait Functor[F[_]] {
     def map[A, B](f: A => B)(fa: F[A]): F[B]
   }
@@ -66,18 +78,27 @@ object Sec2 {
     }
   }
 
+  // fold: (F[A] => A) => Fix[F] => A
   def fold[F[_]: Functor, A](f: F[A] => A)(ff: Fix[F]): A =
-    f(ff.out.map(fold[F, A](f)))
+    f(ff.out.map( fold[F, A](f) ))
 
+  // unfold: (A => F[A]) => A => Fix[F]
   def unfold[F[_]: Functor, A](f: A => F[A])(a: A): Fix[F] = 
-    Fix(f(a).map(unfold[F, A](f)))
+    Fix(f(a).map( unfold[F, A](f) ))
 }
 
 object Sec3 {
   import Sec2._
 
-  def c: List[Fix[List]] => List[List[Fix[List]]] = ???
-  def sort1: Fix[List] => Fix[List] = fold(unfold(c))
+  // The underlined sorted list in paper
+  type StList[T] = List[T]
+
+  // A sorting function transforms an unsorted list to a sorted list
+  type SortFunc = Fix[List] => Fix[StList]
+
+  // Angle 1: SortFunc is a fold that consumes a value of Fix[List]
+  def c: List[Fix[StList]] => StList[List[Fix[StList]]] = ???
+  def sort1: Fix[List] => Fix[StList] = fold(unfold(c))
 
   def naiveInsert: List[Fix[List]] => List[List[Fix[List]]] = {
     case Nil => Nil
@@ -89,6 +110,7 @@ object Sec3 {
 
   def naiveInsertSort: Fix[List] => Fix[List] = fold(unfold(naiveInsert))
 
+  // Angle 2: SortFunc is an unfold that produces a value of Fix[StList]
   def a: List[List[Fix[List]]] => List[Fix[List]] = ???
   def sort2: Fix[List] => Fix[List] = unfold(fold(a))
 
