@@ -1,4 +1,12 @@
-package duality.of.sort
+package duality.of.sorts
+
+// A Duality of Sorts
+// Ralf Hinze, Jose Pedro Magalhaes, Nicolas Wu
+// in The Beauty of Functional Code, LNCS 8106
+
+// This paper: makes the duality between folds and unfolds explicit,
+//             defines sorting algorithms as folds of unfolds,
+//             and as unfolds of folds.
 
 object Sec1 {
   // insert an element `x` into an already sorted list `xs`
@@ -39,6 +47,8 @@ object Sec1 {
 
   def main(args: Array[String]): Unit = ()
 }
+
+/* Sec 2. Functors, Folds, and Unfolds */
 
 object Sec2 {
   // two-level types (Sheard & Pasalic 2004)
@@ -87,59 +97,72 @@ object Sec2 {
     Fix(f(a).map( unfold[F, A](f) ))
 }
 
+/* Sec 3. Sorting by Swapping */
+
 object Sec3 {
   import Sec2._
 
   // The underlined sorted list in paper
   type StList[T] = List[T]
+  val StNil = Nil
+  val StCons = Cons
 
   // A sorting function transforms an unsorted list to a sorted list
   type SortFunc = Fix[List] => Fix[StList]
 
   // Angle 1: SortFunc is a fold that consumes a value of Fix[List]
   def c: List[Fix[StList]] => StList[List[Fix[StList]]] = ???
-  def sort1: Fix[List] => Fix[StList] = fold(unfold(c))
+  def unfoldc: List[Fix[StList]] => Fix[StList] = unfold(c)
+  def sort1: SortFunc = fold(unfold(c))
 
-  def naiveInsert: List[Fix[List]] => List[List[Fix[List]]] = {
-    case Nil => Nil
-    case Cons(x, Fix(Nil)) => Cons(x, Nil)
-    case Cons(x, Fix(Cons(y, rest))) =>
-      if (x <= y) Cons(x, Cons(y, rest))
-      else Cons(y, Cons(x, rest))
+  def naiveInsert: List[Fix[StList]] => StList[List[Fix[StList]]] = {
+    case Nil => StNil
+    case Cons(x, Fix(StNil)) => StCons(x, Nil)
+    case Cons(x, Fix(StCons(y, rest))) =>
+      if (x <= y) StCons(x, Cons(y, rest))
+      else        StCons(y, Cons(x, rest)) // Note: does not make use of the fact that y::rest is already sorted
   }
 
   def naiveInsertSort: Fix[List] => Fix[List] = fold(unfold(naiveInsert))
 
   // Angle 2: SortFunc is an unfold that produces a value of Fix[StList]
-  def a: List[List[Fix[List]]] => List[Fix[List]] = ???
-  def sort2: Fix[List] => Fix[List] = unfold(fold(a))
+  def a: List[StList[Fix[List]]] => StList[Fix[List]] = ???
+  def folda: Fix[List] => StList[Fix[List]] = fold(a)
+  def sort2: SortFunc = unfold(fold(a))
 
-  def bubble: List[List[Fix[List]]] => List[Fix[List]] = {
-    case Nil => Nil
-    case Cons(x, Nil) => Cons(x, Fix[List](Nil))
-    case Cons(x, Cons(y, rest)) =>
-      if (x <= y) Cons(x, Fix[List](Cons(y, rest)))
-      else Cons(y, Fix[List](Cons(x, rest)))
+  def bubble: List[StList[Fix[List]]] => StList[Fix[List]] = {
+    case Nil => StNil
+    case Cons(x, StNil) => StCons(x, Fix[List](Nil))
+    case Cons(x, StCons(y, rest)) =>
+      if (x <= y) StCons(x, Fix[List](Cons(y, rest)))
+      else        StCons(y, Fix[List](Cons(x, rest)))
   }
 
-  def bubbleSort: Fix[List] => Fix[List] = unfold(fold(bubble))
+  def bubbleSort: Fix[List] => Fix[StList] = unfold(fold(bubble))
 
-  // a further generalization
+  // naiveInsert and bubble only inspect elements in the first two levels
+  // further generalize them to a `swap` function
 
-  def swap[X]: List[List[X]] => List[List[X]] = {
-    case Nil => Nil
-    case Cons(a, Nil) => Cons(a, Nil)
-    case Cons(a, Cons(b, rest)) =>
-      if (a <= b) Cons(a, Cons(b, rest))
-      else Cons(b, Cons(a, rest))
+  def swap[X]: List[StList[X]] => StList[List[X]] = {
+    case Nil => StNil
+    case Cons(a, StNil) => StCons(a, Nil)
+    case Cons(a, StCons(b, rest)) =>
+      if (a <= b) StCons(a, Cons(b, rest))
+      else        StCons(b, Cons(a, rest))
   }
 
-  def naiveInsertSort2: Fix[List] => Fix[List] =
+  // Now, redefine naiveInsertSort and bubbleSort using swap
+
+  def naiveInsertSort2: Fix[List] => Fix[StList] =
     //fold[List, Fix[List]](unfold[List, List[Fix[List]]]
-    fold(unfold((a: List[Fix[List]]) => swap[Fix[List]](a.map(_.out))))
+    fold(unfold({ a: List[Fix[StList]] =>
+      swap[Fix[List]](a.map(_.out))
+    }))
 
   def bubbleSort2: Fix[List] => Fix[List] =
-    unfold(fold((a: List[List[Fix[List]]]) => swap[Fix[List]](a).map(Fix(_))))
+    unfold(fold({ a: List[StList[Fix[List]]] =>
+      swap[Fix[List]](a).map(Fix(_))
+    }))
 
   def main(args: Array[String]): Unit = {
     println(naiveInsertSort(unsorted))
@@ -150,13 +173,20 @@ object Sec3 {
   }
 }
 
+/* Sec 4. Paramorphisms & Apomorphisms */
+
 object Sec4 {
   import Sec2._
   import Sec3._
 
+  // product of types
+  type ⊗[A, B] = (A, B)
+  // sum of types
+  type ⊕[A, B] = Either[A, B]
+
   implicit class Fun1Ops[A, B](f: A => B) {
-    def △[C](g: A => C): A => (B, C) = a => (f(a), g(a))
-    def ▽[C](g: C => B): Either[A, C] => B = {
+    def △[C](g: A => C): A => B ⊗ C = a => (f(a), g(a))
+    def ▽[C](g: C => B): A ⊕ C => B = {
       case Left(a) => f(a)
       case Right(c) => g(c)
     }
@@ -165,36 +195,34 @@ object Sec4 {
   // Examples
   def f: Int => Int = x => x + 1
   def g: Int => String = x => x.toString
-  def h: Int => (Int, String) = f △ g
+  def h: Int => Int ⊗ String = f △ g
 
   def id[A]: A => A = a => a
 
   // Paramorphism
-  def para[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff =>
-    // id △ para(f): Fix[F] => (Fix[F], A)
+  def para[F[_]: Functor, A](f: F[Fix[F] ⊗ A] => A): Fix[F] => A = ff =>
+    // id △ para(f): Fix[F] => (Fix[F] ⊗ A)
     f(ff.out.map(id △ para(f)))
 
   // Compute all proper suffixes of a list
   import scala.collection.immutable.{List => SList}
-  def suf: List[(Fix[List], SList[Fix[List]])] => SList[Fix[List]] = {
+  def suf: List[Fix[List] ⊗ SList[Fix[List]]] => SList[Fix[List]] = {
     case Nil => SList()
     case Cons(n, (l, ls)) => l::ls
   }
   def suffixes: Fix[List] => SList[Fix[List]] = para(suf)
 
   // Define paramorphism using fold
-  def para_alter[F[_]: Functor, A](f: F[(Fix[F], A)] => A): Fix[F] => A = ff => {
+  def para_alter[F[_]: Functor, A](f: F[Fix[F] ⊗ A] => A): Fix[F] => A = ff => {
     val g: F[(Fix[F], A)] => Fix[F] = ff => Fix[F](ff.map(_._1))
     fold(g △ f)(ff)._2
   }
 
   // Apomorphism ~ unfold, allows early termination of computation
-  def apo[F[_]: Functor, A](f: A => F[Either[Fix[F], A]]): A => Fix[F] = a =>
+  def apo[F[_]: Functor, A](f: A => F[Fix[F] ⊕ A]): A => Fix[F] = a =>
     // apo(f): A => Fix[F]
-    // id ▽ apo(f): Either[Fix[F], A] => Fix[F]
+    // id ▽ apo(f): Fix[F] ⊕ A => Fix[F]
     Fix[F](f(a).map(id ▽ apo(f)))
 
   /* 4.1 */
-
-
 }
