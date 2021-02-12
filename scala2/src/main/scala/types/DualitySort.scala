@@ -2,7 +2,7 @@ package duality.of.sorts
 
 // A Duality of Sorts
 // Ralf Hinze, Jose Pedro Magalhaes, Nicolas Wu
-// in The Beauty of Functional Code, LNCS 8106
+// in The Beauty of Functional Code, LNCS 8106, Springer
 
 // This paper: makes the duality between folds and unfolds explicit,
 //             defines sorting algorithms as folds of unfolds,
@@ -224,5 +224,50 @@ object Sec4 {
     // id ▽ apo(f): Fix[F] ⊕ A => Fix[F]
     Fix[F](f(a).map(id ▽ apo(f)))
 
-  /* 4.1 */
+  /* 4.1: making the duality clear */
+
+  // pointed: type 𝑓₊ a = a + f a
+  type :+:[F[_], A] = A ⊕ F[A]
+  // copointed: type 𝑓ₓ a = a x f a
+  type :*:[F[_], A] = A ⊗ F[A]
+
+  def Stop[F[_], A](a: A): F :+: A = Left[A, F[A]](a)
+  def Go[F[_], A](fa: F[A]): F :+: A = Right[A, F[A]](fa)
+}
+
+object Sec5 {
+  import Sec2._
+  import Sec3._
+  import Sec4._
+
+  def insert(xs: List[Fix[StList]]): StList[List :+: Fix[StList]] =
+    xs match {
+      case Nil => StNil
+      case Cons(a, Fix(StNil)) => StCons(a, Stop(Fix[StList](StNil)))
+      case Cons(a, Fix(StCons(b, rest))) =>
+        if (a <= b) StCons(a, Stop(Fix[StList](StCons(b, rest))))
+        else        StCons(b, Go(Cons(a, rest)))
+    }
+
+  def insertSort: Fix[List] => Fix[StList] = fold(apo(insert))
+
+  // swop: swaps and stops
+  def swop[A](xs: List[List :*: A]): StList[List :+: A] =
+    xs match {
+      case Nil => StNil
+      case Cons(a, (x, StNil)) => StCons(a, Stop(x))
+      case Cons(a, (x, StCons(b, rest))) =>
+        if (a <= b) StCons(a, Stop(rest))
+        else        StCons(b, Go(Cons(a, rest)))
+    }
+
+  def anotherInsertSort: Fix[List] => Fix[StList] =
+    fold(apo { f: List[Fix[StList]] =>
+      swop(f.map(id △ (x => x.out)))
+    })
+
+  def selectSort: Fix[List] => Fix[StList] =
+    unfold(para { f: List[List :*: Fix[List]] =>
+      swop(f).map(id ▽ Fix[StList])
+    })
 }
