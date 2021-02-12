@@ -66,7 +66,12 @@ object CPSExamples {
           f(lv, v, rv)(k)))
   }
 
-  def anotherTreeSize(t: Tree) = treeFold_cps[Int](t, 0, { case (lv, v, rv) => k => k(1 + lv + rv) }, t => t)
+  def anotherTreeSize(t: Tree) = 
+    treeFold_cps[Int](t, 0, { case (lv, v, rv) => k => k(1 + lv + rv) }, t => t)
+  def anotherTreeDepth(t: Tree) =
+    treeFold_cps[Int](t, 0, { case (lv, v, rv) => k => k(1 + math.max(lv, rv)) }, t => t)
+  def anotherTreeReflect(t: Tree) =
+    treeFold_cps[Tree](t, Leaf(), { case (lv, v, rv) => k => k(Node(rv, v, lv)) }, t => t)
 
   def main(args: Array[String]) = {
     println(power_cps(2, 4, x => x))
@@ -85,5 +90,24 @@ object CPSExamples {
 
     println(quicksort(List(5, 2, 4, 1, 0, 10)))
     println(quicksort_cps(List(5, 2, 4, 1, 0, 10), xs => xs))
+
+    val t1 = Node(Node(Leaf(), 1, Leaf()),
+                  2,
+                  Leaf())
+    val t2 = Node(Node(Leaf(), 1, Leaf()),
+                  2,
+                  Node(Leaf(), 3, Node(Leaf(), 3, Leaf())))
+
+    println(treeDepth(t2))
+    println(anotherTreeDepth(t2))
+
+    println(treeSize(t2))
+    println(anotherTreeSize(t2))
+    
+    println(treeReflect(t1))
+    println(anotherTreeReflect(t1))
+
+    println(treeReflect(t2))
+    println(anotherTreeReflect(t2))
   }
 }
