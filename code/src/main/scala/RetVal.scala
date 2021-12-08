@@ -4,12 +4,12 @@ package compositional
 
 enum RetVal:
   case NoRet
-  case MustRet(v: AbsValue)
-  case MayRet(v: AbsValue)
+  case MustRet(v: AbsVal)
+  case MayRet(v: AbsVal)
 
 import RetVal._
 
-given RetValLattice(using lav: Lattice[AbsValue]): Lattice[RetVal] with
+given RetValLattice(using lav: Lattice[AbsVal]): Lattice[RetVal] with
   def bot: RetVal = NoRet
   def top: RetVal = MayRet(lav.top)
   extension (l1: RetVal)

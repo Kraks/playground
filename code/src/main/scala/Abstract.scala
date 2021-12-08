@@ -5,14 +5,14 @@ package compositional
 import Expr._
 import Stmt._
 
-type AbsValue = Interval
-type AbsStore = Map[String, AbsValue]
+type AbsVal = Interval
+type AbsStore = Map[String, AbsVal]
 
 def lfp[T: Lattice](f: T => T)(t: T): T =
   val next = f(t)
   if (next ⊑ t) t else lfp(f)(next ⊔ t)
 
-def absEvalOp(op: String, i1: AbsValue, i2: AbsValue): AbsValue =
+def absEvalOp(op: String, i1: AbsVal, i2: AbsVal): AbsVal =
   op match {
     case "+" => i1 + i2
     case "-" => i1 - i2
@@ -32,7 +32,7 @@ def absEvalOp(op: String, i1: AbsValue, i2: AbsValue): AbsValue =
     case _ => ???
   }
 
-def absEval(s: Expr, σ: AbsStore)(using Γ: FunEnv): AbsValue =
+def absEval(s: Expr, σ: AbsStore)(using Γ: FunEnv): AbsVal =
   s match {
     case Var(x) => σ(x)
     case Lit(i) => Interval.from(i)
@@ -40,7 +40,7 @@ def absEval(s: Expr, σ: AbsStore)(using Γ: FunEnv): AbsValue =
     case Call(fname, args) => absExecFun(Γ(fname), args.map(absEval(_, σ)))
   }
 
-def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsValue], AbsStore) =
+def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsVal], AbsStore) =
   s match {
     case Skip => (None, σ)
     case Assign(x, e) => (None, σ ⊔ Map(x -> absEval(e, σ)))
@@ -55,7 +55,7 @@ def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsValue], AbsStor
       val els = if (Interval.from(0) ⊑ c) Some(absExec(s2, σ)) else None
       (thn ⊔ els).get
     case While(e, s) =>
-      val loop: ((Option[AbsValue], AbsStore)) => (Option[AbsValue], AbsStore) = {
+      val loop: ((Option[AbsVal], AbsStore)) => (Option[AbsVal], AbsStore) = {
         case (rt, σ) =>
           if (Interval.from(1) ⊑ absEval(e, σ)) absExec(s, σ)
           else (rt, σ)
@@ -65,7 +65,7 @@ def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsValue], AbsStor
     case Ret(e) => (Some(absEval(e, σ)), σ)
   }
 
-def absExecFun(fdef: FunDef, vs: List[AbsValue])(using Γ: FunEnv): AbsValue =
+def absExecFun(fdef: FunDef, vs: List[AbsVal])(using Γ: FunEnv): AbsVal =
   val FunDef(_, params, body) = fdef
   val (Some(ret), σ) = absExec(body, params.zip(vs).toMap)
   ret
