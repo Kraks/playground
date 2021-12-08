@@ -56,6 +56,16 @@ given OptionLattice[T](using lt: Lattice[T]): Lattice[Option[T]] with
       if (l1.isEmpty || l2.isEmpty) None
       else Some(l1.getOrElse(lt.bot) ⊓ l2.getOrElse(lt.bot))
 
+given OptionAbsDomain[T: Lattice : AbsDomain]: AbsDomain[Option[T]] with
+  val lt = summon[Lattice[T]]
+  extension (l1: Option[T])
+    def ▽(l2: Option[T]): Option[T] =
+      if (l1.isEmpty && l2.isEmpty) None
+      else Some(l1.getOrElse(lt.bot) ▽ l2.getOrElse(lt.bot))
+    def △(l2: Option[T]): Option[T] =
+      if (l1.isEmpty || l2.isEmpty) None
+      else Some(l1.getOrElse(lt.bot) △ l2.getOrElse(lt.bot))
+
 given ProductLattice[A, B](using la: Lattice[A], lb: Lattice[B]): Lattice[(A, B)] with
   def bot: (A, B) = (la.bot, lb.bot)
   def top: (A, B) = (la.top, lb.top)
@@ -63,6 +73,11 @@ given ProductLattice[A, B](using la: Lattice[A], lb: Lattice[B]): Lattice[(A, B)
     def ⊑(l2: (A, B)): Boolean = l1._1 ⊑ l2._1 && l1._2 ⊑ l2._2
     def ⊔(l2: (A, B)): (A, B) = (l1._1 ⊔ l2._1, l1._2 ⊔ l2._2)
     def ⊓(l2: (A, B)): (A, B) = (l1._1 ⊓ l2._1, l1._2 ⊓ l2._2)
+
+given ProductAbsDomain[A: Lattice : AbsDomain, B: Lattice : AbsDomain]: AbsDomain[(A, B)] with
+  extension (l1: (A, B))
+    def ▽(l2: (A, B)): (A, B) = (l1._1 ▽ l2._1, l1._2 ▽ l2._2)
+    def △(l2: (A, B)): (A, B) = (l1._1 △ l2._1, l1._2 △ l2._2)
 
 given MapLattice[K, V](using lv: Lattice[V]): Lattice[Map[K, V]] with
   def bot: Map[K, V] = Map[K, V]()
@@ -79,3 +94,9 @@ given MapLattice[K, V](using lv: Lattice[V]): Lattice[Map[K, V]] with
     def ⊓(m2: Map[K, V]): Map[K, V] =
       m1.keySet.intersect(m2.keySet).foldLeft(Map[K,V]()) {
         case (m, k) => m + (k -> m1(k) ⊓ m2(k)) }
+
+given MapAbsDomain[K, V: Lattice : AbsDomain]: AbsDomain[Map[K, V]] with
+  val lv = summon[Lattice[V]]
+  extension (m1: Map[K, V])
+    def ▽(m2: Map[K, V]): Map[K, V] = ???
+    def △(m2: Map[K, V]): Map[K, V] = ???
