@@ -16,4 +16,3 @@ class TestConcrete extends AnyFunSuite {
   assert(runConcrete(earlyRet, "main", IntV(0)) == IntV(1))
   assert(runConcrete(earlyRet, "main", IntV(1)) == IntV(2))
 }
-

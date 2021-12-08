@@ -27,8 +27,11 @@ def absEvalOp(op: String, i1: AbsVal, i2: AbsVal): AbsVal =
       else if (i1.ub < i2.lb) Interval.from(0)
       else Interval.from(0, 1)
     case "=" =>
-      if (i1.toConst == i2.toConst) Interval.from(1)
-      else Interval.from(0, 1)
+      (i1.toConst, i2.toConst) match {
+        case (Some(v1), Some(v2)) =>
+          if (v1 == v2) Interval.from(1) else Interval.from(0)
+        case (_, _) => Interval.from(0, 1)
+      }
     case _ => throw new RuntimeException("Unsupported operation")
   }
 
@@ -69,3 +72,7 @@ def absExecFun(fdef: FunDef, vs: List[AbsVal])(using Γ: FunEnv): AbsVal =
   val FunDef(_, params, body) = fdef
   val (Some(ret), σ) = absExec(body, params.zip(vs).toMap)
   ret
+
+def absRun(p: Program, entrance: String, args: AbsVal*): AbsVal =
+  given funEnv: FunEnv = p.funEnv
+  absExecFun(funEnv(entrance), args.toList)

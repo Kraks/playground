@@ -9,6 +9,13 @@ import Value._
 object Examples {
   val add1 = FunDef("add1", List("x"), Ret(BinOp("+", Var("x"), Lit(1))))
 
+  val branch = FunDef("branch", List("x"),
+    SSeq(
+      Cond(BinOp("=", Var("x"), Lit(0)),
+        Assign("y", Lit(1)),
+        Assign("y", Lit(2))),
+      Ret(Var("y"))))
+
   val power = FunDef("power", List("b", "x"),
     Cond(BinOp("=", Var("x"), Lit(0)),
       Ret(Lit(1)),
