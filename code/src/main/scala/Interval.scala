@@ -26,8 +26,16 @@ given IntervalLattice(using ldb: Lattice[Double]): Lattice[Interval] with
 
 given IntervalAbsDomain(using lit: Lattice[Interval]): AbsDomain[Interval] with
   extension (l1: Interval)
-    def ▽(l2: Interval): Interval = ???
-    def △(l2: Interval): Interval = ???
+    def ▽(l2: Interval): Interval = (l1, l2) match {
+      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒
+        Interval(if (lb1 ⊑ lb2) lb1 else Double.NegativeInfinity,
+                 if (ub2 ⊑ ub1) ub1 else Double.PositiveInfinity)
+    }
+    def △(l2: Interval): Interval = (l1, l2) match {
+      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒
+        Interval(if (lb1 == Double.NegativeInfinity) lb2 else lb1,
+                 if (ub1 == Double.PositiveInfinity) ub2 else ub1)
+    }
 
 given IntervalArith: Arith[Interval] with
   extension (x: Interval)
