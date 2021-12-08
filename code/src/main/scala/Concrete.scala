@@ -35,10 +35,7 @@ def eval(s: Expr, σ: Store)(using Γ: FunEnv): Value =
     case Var(x) => σ(x)
     case Lit(i) => IntV(i)
     case BinOp(op, e1, e2) => evalOp(op, eval(e1, σ), eval(e2, σ))
-    case Call(fname, args) =>
-      val vs = args.map(eval(_, σ))
-      val ret = execFun(Γ(fname), vs)
-      ret
+    case Call(fname, args) => execFun(Γ(fname), args.map(eval(_, σ)))
   }
 
 def exec(s: Stmt, σ: Store)(using Γ: FunEnv): (Option[Value], Store) =
