@@ -1,5 +1,6 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // Some example programs
 
 import Expr._
@@ -28,6 +29,13 @@ object Examples {
         Ret(Call("mult", List(Var("b"), Call("power", List(Var("b"), BinOp("-", Var("x"), Lit(1))))))))),
     FunDef("mult", List("x", "y"),
       Ret(BinOp("*", Var("x"), Var("y"))))))
+
+  val powerWhile = FunDef("power", List("b", "x"),
+    SSeq(Assign("res", Lit(1)),
+      SSeq(While(BinOp("<", Lit(0), Var("x")),
+        SSeq(Assign("res", BinOp("*", Var("b"), Var("res"))),
+          Assign("x", BinOp("-", Var("x"), Lit(1))))),
+        Ret(Var("res")))))
 
   val earlyRet = FunDef("main", List("x"),
     SSeq(
