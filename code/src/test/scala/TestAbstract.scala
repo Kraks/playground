@@ -21,6 +21,14 @@ class TestInterval extends AnyFunSuite {
     assert(bot + Interval.from(2, 3) == bot)
   }
 
+  test("mult/div") {
+    // BMI example: https://en.wikipedia.org/wiki/Interval_arithmetic#Multiple_intervals
+    assert(
+      (Interval.make(79.5, 80.5) / (Interval.make(1.785, 1.795) * Interval.make(1.785, 1.795)))
+        ⊑ Interval.make(24.673, 25.266)
+    )
+  }
+
   test("ordering") {
     assert(bot ⊑ top)
     assert(Interval.make(20, 10) ⊑ top)

@@ -63,7 +63,7 @@ given IntervalArith: Arith[Interval] with
         val ub1lb2 = ub1 * lb2
         val ub1ub2 = ub1 * ub2
         val arr = List[Double](lb1lb2, lb1ub2, ub1lb2, ub1ub2)
-        Interval.make(arr.reduce(math.min(_, _)), arr.reduce(math.max(_, _)))
+        Interval.make(arr.min, arr.max)
     }
     def /(y: Interval): Interval =
       val rhs = y match {
