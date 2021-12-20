@@ -64,8 +64,7 @@ def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsVal], AbsStore)
           if (Interval.from(1) ⊑ absEval(e, σ)) absExec(s, σ)
           else (rt, σ)
       }
-      if (!(Interval.from(1) ⊑ absEval(e, σ))) (None, σ)
-      else lfp(loop)((None, σ))
+      lfp(loop)((None, σ))
     case Ret(e) => (Some(absEval(e, σ)), σ)
   }
 
