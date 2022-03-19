@@ -1,3 +1,6 @@
+// Author: Guannan Wei
+// Derived from CS352/502 lecture notes
+
 #include <stdio.h>
 
 typedef void* (*fun_ptr)(int);

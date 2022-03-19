@@ -1,3 +1,6 @@
+// Author: Guannan Wei
+// Derived from CS352/502 lecture notes
+
 #include <stdio.h>
 #include <setjmp.h>
 #include <limits.h>
@@ -14,7 +17,7 @@ int odd(int tcc, int x);
 
 int even(int tcc, int x) {
   if (tcc > TC_LIMIT) {
-    resume.fun = even; 
+    resume.fun = even;
     resume.arg = x;
     _longjmp(jmp_env, -1);
   }
@@ -23,7 +26,7 @@ int even(int tcc, int x) {
 
 int odd(int tcc, int x) {
   if (tcc > TC_LIMIT) {
-    resume.fun = odd; 
+    resume.fun = odd;
     resume.arg = x;
     _longjmp(jmp_env, -1);
   }
@@ -38,5 +41,5 @@ int main(int argc, char* argv[]) {
     res = (resume.fun)(0, resume.arg);
   }
 
-  printf("%d\n",res); 
+  printf("%d\n",res);
 }

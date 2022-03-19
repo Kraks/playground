@@ -1,3 +1,6 @@
+// Author: Guannan Wei
+// Derived from CS352/502 lecture notes
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
@@ -37,8 +40,8 @@ void odd_cps(cont k, int x) {
 void main_1(int res) { printf("%d\n", res); exit(0); }
 
 int main(int argc, char* argv[]) {
-  if (_setjmp(jmp_env) == 0) 
+  if (_setjmp(jmp_env) == 0)
     even_cps(main_1, 300000000);
-  else 
+  else
     (resume.fun)(resume.k, resume.arg);
 }
