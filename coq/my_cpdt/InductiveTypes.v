@@ -287,6 +287,8 @@ Check formula_ind.
 
 (* An Interlude on Induction Principles *)
 
+(* difference: P ranges over Prop, Type, or Set *)
+
 Print nat_ind.  (* Prop *)
 Print nat_rect. (* Type *)
 Print nat_rec.  (* Set *)
@@ -306,4 +308,168 @@ Theorem plus_equivalent : plus_recursive = plus_rec.
   reflexivity.
 Qed.
 
+(* nat_rect can be defined manually *)
+
+Fixpoint nat_rect' (P : nat -> Type)
+         (HO : P O)
+         (HS : forall n, P n -> P (S n)) (n : nat) : P n :=
+  match n return P n with
+  | O => HO
+  | S n' => HS n' (nat_rect' P HO HS n')
+  end.
+
+Section nat_ind'.
+  Variable P : nat -> Prop.
+  Hypothesis O_case : P O.
+  Hypothesis S_case : forall n : nat, P n -> P (S n).
+
+  Fixpoint nat_ind' (n : nat) : P n :=
+    match n with
+    | O => O_case
+    | S n' => S_case n' (nat_ind' n')
+    end.
+
+End nat_ind'.
+
+Check nat_ind'.
+
+(* Implementing even_list_mut directly *)
+
+Section even_list_mut'.
+  Variable Peven : even_list -> Prop.
+  Variable Podd : odd_list -> Prop.
+
+  Hypothesis ENil_case : Peven ENil.
+  Hypothesis ECons_case : forall (n : nat) (o : odd_list),
+      Podd o -> Peven (ECons n o).
+  Hypothesis OCons_case : forall (n : nat) (e : even_list),
+      Peven e -> Podd (OCons n e).
+
+  Fixpoint even_list_mut' (e : even_list) : Peven e :=
+    match e with
+    | ENil => ENil_case
+    | ECons n o => ECons_case n o (odd_list_mut' o)
+    end
+  with
+    odd_list_mut' (o : odd_list) : Podd o :=
+    match o with
+    | OCons n e => OCons_case n e (even_list_mut' e)
+    end.
+End even_list_mut'.
+
+Section formula_ind'.
+  Variable P : formula -> Prop.
+  Hypothesis Eq_case : forall n1 n2 : nat, P (Eq n1 n2).
+  Hypothesis And_case : forall f1 f2 : formula,
+    P f1 -> P f2 -> P (And f1 f2).
+  Hypothesis Forall_case : forall f : nat -> formula,
+    (forall n : nat, P (f n)) -> P (Forall f).
+
+  Fixpoint formula_ind' (f : formula) : P f :=
+    match f with
+      | Eq n1 n2 => Eq_case n1 n2
+      | And f1 f2 => And_case f1 f2 (formula_ind' f1) (formula_ind' f2)
+      | Forall f' => Forall_case f' (fun n => formula_ind' (f' n))
+    end.
+End formula_ind'.
+
+(* Nested Inductive Types *)
+
+Inductive nat_tree : Set :=
+| NNode' : nat -> list nat_tree -> nat_tree.
+
+Check nat_tree_ind.
+
+Section All.
+  Variable T : Set.
+  Variable P : T -> Prop.
+
+  Fixpoint All (ls : list T) : Prop :=
+    match ls with
+      | Nil => True
+      | Cons _ h t => P h /\ All t
+    end.
+End All.
+
+Print True.
+Locate "/\".
+Print and.
+
+Section nat_tree_ind'.
+  Variable P : nat_tree -> Prop.
+  Hypothesis NNode'_case : forall (n : nat) (ls : list nat_tree),
+      All nat_tree P ls -> P (NNode' n ls).
+
+  (* Neste types requrie neste recursion *)
+  Fixpoint nat_tree_ind' (tr : nat_tree) : P tr :=
+    match tr with
+    | NNode' n ls =>
+        NNode'_case n ls
+                    ((fix list_nat_tree_ind (ls : list nat_tree) : All nat_tree P ls :=
+                        match ls with
+                        | Nil => I
+                        | Cons _ tr' rest => conj (nat_tree_ind' tr')
+                                               (list_nat_tree_ind rest)
+                        end)
+                       ls)
+    end.
+  
+End nat_tree_ind'.
+
+Section map.
+  Variables T T' : Set.
+  Variable F : T -> T'.
+
+  Fixpoint map (ls : list T) : list T' :=
+    match ls with
+      | Nil => Nil
+      | Cons _ h t => Cons _ (F h) (map t)
+    end.
+End map.
+
+Fixpoint sum (ls : list nat) : nat :=
+  match ls with
+    | Nil => O
+    | Cons _ h t => plus h (sum t)
+  end.
+
+Fixpoint ntsize (tr : nat_tree) : nat :=
+  match tr with
+    | NNode' _ trs => S (sum (map _ _ ntsize trs))
+  end.
+
+Fixpoint ntsplice (tr1 tr2 : nat_tree) : nat_tree :=
+  match tr1 with
+    | NNode' n Nil => NNode' n (Cons _ tr2 Nil)
+    | NNode' n (Cons _ tr trs) => NNode' n (Cons _ (ntsplice tr tr2) trs)
+  end.
+
+Lemma plus_S : forall n1 n2 : nat,
+  plus n1 (S n2) = S (plus n1 n2).
+  induction n1; crush.
+Qed.
+
+#[global] Hint Rewrite plus_S.
+
+Theorem ntsize_ntsplice : forall tr1 tr2 : nat_tree,
+    ntsize (ntsplice tr1 tr2) = plus (ntsize tr2) (ntsize tr1).
+Proof.
+  induction tr1 using nat_tree_ind'.
+  crush. destruct ls; crush.
+Qed.
+
+(* Manual Proofs About Constructors *)
+
+Definition toProp (b : bool) := if b then True else False.
+
+Theorem true_neq_false : true <> false.
+Proof.
+  red. intro. change (toProp false). rewrite <- H. red. trivial.
+Qed.
+
+Theorem S_inj' : forall n m : nat, S n = S m -> n = m.
+  intros n m H.
+  change (pred (S n) = pred (S m)).
+  rewrite H. reflexivity.
+Qed.
 
