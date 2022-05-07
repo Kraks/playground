@@ -1,0 +1,6 @@
+resolver: lts-9.12
+packages:
+  - .
+extra-deps:
+  - typed-duration-0.1.1.0
+  - hedgehog-0.5
