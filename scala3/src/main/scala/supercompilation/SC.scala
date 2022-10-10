@@ -25,12 +25,12 @@ trait Pattern
 case class LitPat(v: Any) extends Pattern 
 case class ConsPat(c: String, vs: List[Var]) extends Pattern 
 
-trait Frame
-case class UpdateK(x: Var) extends Frame
-case class AppK(arg: Var) extends Frame
-case class CaseK(ps: List[(Pattern, Expr)]) extends Frame
-case class BinOpRhsK(rhs: Expr) extends Frame
-case class BinOpLhsK(lhs: Value) extends Frame
+trait Frame(tag: Int)
+case class UpdateK(x: String, tag: Int) extends Frame(tag)
+case class AppK(arg: Var, tag: Int) extends Frame(tag)
+case class CaseK(ps: List[(Pattern, Expr)], tag: Int) extends Frame(tag)
+case class BinOpRhsK(rhs: Expr, tag: Int) extends Frame(tag)
+case class BinOpLhsK(lhs: Value, tag: Int) extends Frame(tag)
 
 type Heap = Map[String, Expr]
 type Stack = List[Frame]
@@ -67,6 +67,11 @@ def reset(): Unit = {
 def freeVars(s: State): List[Var] = ???
 
 def rebuild(s: State): Expr = ???
+
+def setp(s: State): Option[State] = s match
+  case State(h, e@Var(x), k) if h.contains(x) => Some(State(h - x, h(x), UpdateK(x, e.tag)::k))
+  case State(h, v, UpdateK(x, _)::k) if v.isInstanceOf[Value] => Some(State(h + (x -> v), v, k))
+  case _ => None
 
 def reduce(s: State): State = ???
 
