@@ -23,6 +23,9 @@ case class BinOp(op: String, e1: Expr, e2: Expr) extends Expr
 case class Let(x: String, rhs: Expr, body: Expr) extends Expr
 case class Case(e: Expr, ps: List[(Pattern, Expr)]) extends Expr
 
+// Currying App with multiple arguments
+def apps(e1: Expr, vs: List[Var]): Expr = vs.drop(1).foldLeft(App(e1, vs(0)))(App(_, _))
+
 trait Pattern
 case class LitPat(v: Int) extends Pattern
 case class ConsPat(c: String, vs: List[Var]) extends Pattern
@@ -53,7 +56,6 @@ case class State(h: Heap, e: Expr, s: Stack) {
     val t1 = this.tagBag
     val t2 = other.tagBag
     t1.toSet == t2.toSet && t1.size <= t2.size
-
 }
 def inject(e: Expr): State = State(mtHeap, e, List())
 
@@ -65,7 +67,7 @@ case class Continue(h: History) extends TermRes
 
 case class Promise(name: Var, fvs: List[Var], s: State)
 
-// the "ScpM" monad
+// the "ScpM" state monad using native effects
 var count: Int = 0
 val promises: ListBuffer[Promise] = new ListBuffer[Promise]()
 val bindings: HashMap[Var, Expr] = new HashMap[Var, Expr]()
@@ -93,12 +95,23 @@ def primop(op: String, v1: Value, v2: Value): Value =
     case "*" => Lit(n1 * n2)
     case "/" => Lit(n1 / n2)
 
-def consMatch(ps: List[(Pattern, Expr)], v: Cons): Boolean =
-  ???
+def consMatch(ps: List[(Pattern, Expr)], v: Cons): Option[(Pattern, Expr)] =
+  val Cons(c, _) = v
+  ps match {
+    case Nil => None
+    case (p@(ConsPat(`c`, xs), e))::ps => Some(p)
+    case _::ps => consMatch(ps, v)
+  }
 
-def litMatch(ps: List[(Pattern, Expr)], v: Lit): Boolean = ???
+def litMatch(ps: List[(Pattern, Expr)], v: Lit): Option[Expr] =
+  val Lit(n) = v
+  ps match {
+    case Nil => None
+    case (LitPat(`n`), e)::ps => Some(e)
+    case _::ps => litMatch(ps, v)
+  }
 
-def setp(s: State): Option[State] = s match
+def step(s: State): Option[State] = s match
   case State(h, e@Var(x), k) if h.contains(x) =>
     Some(State(h - x, h(x), UpdateK(x, e.tag)::k))
   case State(h, v, UpdateK(x, _)::k) if v.isInstanceOf[Value] =>
@@ -106,6 +119,7 @@ def setp(s: State): Option[State] = s match
   case State(h, a@App(e, x), k) =>
     Some(State(h, e, AppK(x, a.tag)::k))
   case State(h, Lam(x, e), AppK(y, _)::k) =>
+    // Note: this is a bit different from the paper's operational semantics where asumes x and y are equal
     Some(State(h + (x -> y), e, k))
   case State(h, e@BinOp(op, e1, e2), k) =>
     Some(State(h, e1, BinOpRhsK(op, e2, e.tag)::k))
@@ -115,15 +129,32 @@ def setp(s: State): Option[State] = s match
     Some(State(h, primop(op, v1, v2.asInstanceOf[Value]), k))
   case State(h, c@Case(e, ps), k) =>
     Some(State(h, e, CaseK(ps, c.tag)::k))
-  case State(h, v@Cons(c, xs), CaseK(ps, _)::k) if consMatch(ps, v) =>
-    ???
-  case State(h, v@Lit(n), CaseK(ps, _)::k) if litMatch(ps, v) =>
-    ???
+  case State(h, v@Cons(c, xs), CaseK(ps, _)::k) =>
+    consMatch(ps, v) match {
+      case Some((ConsPat(_, ys), e)) =>
+        Some(State(ys.zip(xs).foldLeft(h) { case (h, (x, v)) => h + (x.x -> v) }, e, k))
+      case None => None
+    }
+  case State(h, v@Lit(n), CaseK(ps, _)::k) =>
+    litMatch(ps, v) match {
+      case Some(e) => Some(State(h, e, k))
+      case None => None
+    }
   case State(h, Let(x, rhs, body), k) =>
     Some(State(h + (x -> rhs), body, k))
   case _ => None
 
-def reduce(s: State): State = ???
+def reduce(s: State): State = 
+  def intermediate(s: State): Boolean = !s.e.isInstanceOf[Var]
+  def drive(h: History, s: State): State =
+    step(s) match
+      case Some(s1) => 
+        if (intermediate(s1)) drive(h, s1)
+        else terminate(h, s1) match
+          case Stop() => s1 
+          case Continue(h1) => drive(h1, s1)
+      case None => s
+  drive(mtHistory, s)
 
 def split(f: State => Expr): State => Expr = ???
 
@@ -131,9 +162,20 @@ def terminate(h: History, s: State): TermRes =
   if (h.exists(_ <= s)) Stop()
   else Continue(s::h)
 
-def memo(f: State => Expr): State => Expr = ???
+def stateMatch(s1: State, s2: State): Option[Map[Var, Var]] = ???
 
-def stateMatch(s1: State, s2: State): Option[Var => Var] = ???
+def memo(f: State => Expr)(s: State): Expr = 
+  val ps = getPromises
+  val res = 
+    for p <- ps
+        Some(rn) <- List(stateMatch(p.s, s))
+    yield apps(p.name, p.fvs.map(rn))
+  if (res.nonEmpty) res(0)
+  else {
+    val x = freshName()
+    
+    ???
+  }
 
 def sc(h: History, s: State): Expr = {
   def scHelper(h: History, s: State): Expr = terminate(h, s) match
