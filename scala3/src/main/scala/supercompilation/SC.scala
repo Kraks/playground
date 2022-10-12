@@ -25,6 +25,7 @@ case class Case(e: Expr, ps: List[(Pattern, Expr)]) extends Expr
 
 // Currying App with multiple arguments
 def apps(e1: Expr, vs: List[Var]): Expr = vs.drop(1).foldLeft(App(e1, vs(0)))(App(_, _))
+def lambdas(vs: List[Var], body: Expr): Expr = vs.dropRight(1).foldRight(Lam(vs.last.x, body)) { case (v, b) => Lam(v.x, b) }
 
 trait Pattern
 case class LitPat(v: Int) extends Pattern
@@ -56,6 +57,7 @@ case class State(h: Heap, e: Expr, s: Stack) {
     val t1 = this.tagBag
     val t2 = other.tagBag
     t1.toSet == t2.toSet && t1.size <= t2.size
+  def fv: Set[Var] = ???
 }
 def inject(e: Expr): State = State(mtHeap, e, List())
 
@@ -81,8 +83,6 @@ def reset(): Unit = {
   promises.clear()
   bindings.clear()
 }
-
-def freeVars(s: State): List[Var] = ???
 
 def rebuild(s: State): Expr = ???
 
@@ -156,7 +156,8 @@ def reduce(s: State): State =
       case None => s
   drive(mtHistory, s)
 
-def split(f: State => Expr): State => Expr = ???
+def split(f: State => Expr)(s: State): Expr =
+  ???
 
 def terminate(h: History, s: State): TermRes =
   if (h.exists(_ <= s)) Stop()
@@ -164,7 +165,7 @@ def terminate(h: History, s: State): TermRes =
 
 def stateMatch(s1: State, s2: State): Option[Map[Var, Var]] = ???
 
-def memo(f: State => Expr)(s: State): Expr = 
+def memo(opt: State => Expr)(s: State): Expr = 
   val ps = getPromises
   val res = 
     for p <- ps
@@ -173,8 +174,10 @@ def memo(f: State => Expr)(s: State): Expr =
   if (res.nonEmpty) res(0)
   else {
     val x = freshName()
-    
-    ???
+    val vs = s.fv.toList
+    val e = opt(s)
+    bind(x, lambdas(vs, e))
+    apps(x, vs)
   }
 
 def sc(h: History, s: State): Expr = {
@@ -186,6 +189,7 @@ def sc(h: History, s: State): Expr = {
 
 def start(e: Expr): Expr = {
   reset()
+  // TODO runScpM
   sc(mtHistory, inject(e))
 }
 
@@ -196,5 +200,8 @@ object Test {
     val e = App(Lam("x", BinOp("+", Var("x"), Lit(1))), Var("y"))
     println(e.tag)
     println(e.e1.tag)
+
+    println(lambdas(List("a", "b", "c").map(Var), Lit(1)))
+    println(apps(lambdas(List("a", "b", "c").map(Var), Lit(1)), List("x", "y", "z").map(Var)))
   }
 }
