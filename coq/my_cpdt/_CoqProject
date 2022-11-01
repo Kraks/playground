@@ -2,3 +2,4 @@
 CpdtTactics.v
 StackMachine.v
 InductiveTypes.v
+Coinductive.v
