@@ -1,5 +1,6 @@
 #lang typed/racket
 ;; Denotational semantics for Contract PCF
+;; From https://gist.github.com/dvanhorn/3041667
 
 ;; SYNTAX
 ;; ======
