@@ -98,8 +98,8 @@ given IntervalAbsDomain: AbsDomain[Interval] with
       else Interval.make(if (l1.lb ⊑ l2.lb) l1.lb else Double.NegativeInfinity,
                          if (l2.ub ⊑ l1.ub) l1.ub else Double.PositiveInfinity)
     def △(l2: Interval): Interval =
-      if (l1 == bot) l2
-      else if (l2 == bot) l1
+      if (l1 == bot) bot
+      else if (l2 == bot) bot
       else Interval.make(if (l1.lb == Double.NegativeInfinity) l2.lb else l1.lb,
                          if (l1.ub == Double.PositiveInfinity) l2.ub else l1.ub)
 
@@ -300,9 +300,9 @@ def absExec(s: Stmt, σ: AbsStore): AbsStore =
         else σ
       }
       kleene0(loop)(σ)
-      */       
+       */
 
-object Test {
+object Examples {
   // input: x, b
   val powerWhile =
     Seq(Assign("res", Lit(1)),
@@ -340,7 +340,10 @@ object Test {
   val nonTerm3 = While(Lit(1), Assign("x", BinOp("+", Var("x"), Lit(1))))
 
   val undef = Assign("x", BinOp("+", Var("x"), Var("y")))
+}
 
+object Test {
+  import Examples._
   def main(args: Array[String]): Unit = {
     println(summon[Lattice[Interval]].bot * Interval.from(3, 4))
     println(Interval.make(1, 10) ⊓ Interval.make(11, 15))
