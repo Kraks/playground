@@ -109,3 +109,38 @@
 (prompt (+ 2 (control k (+ 1 (control k1 (k 6))))))
 
 (prompt (+ 2 (control k (control k1 (control k2 (k2 6))))))
+
+;;;;;;;;;;;
+
+; Multi-prompt continuations
+
+(define tag-a (make-continuation-prompt-tag 'a))
+(define tag-b (make-continuation-prompt-tag 'b))
+
+(reset-at
+ tag-a
+ (+ 10 (shift-at tag-a k (+ 1 (k 3)))))
+
+; kb = λv. v+5+10+111
+; ka = λv. v+10
+
+;    (ka (kb 3))
+; => (3 + 5 + 10 + 111) + 10
+(reset-at
+ tag-b
+ (+ 111
+    (reset-at
+     tag-a
+     (+ 10 (shift-at tag-a ka
+                     (+ 5 (shift-at tag-b kb
+                                   (ka (kb 3)))))))))
+
+; (ka 3) => 3 + 10
+(reset-at
+ tag-b
+ (+ 111
+    (reset-at
+     tag-a
+     (+ 10 (shift-at tag-a ka
+                     (+ 5 (shift-at tag-b kb
+                                    (ka 3))))))))
