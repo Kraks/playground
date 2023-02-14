@@ -20,7 +20,7 @@ object QuantumContSim {
   def CX(y: Exp, z: Exp): Gate = CCX(Bit(true), y, z)
 
   implicit def intToExp(i: Int): Exp = Wire(i)
-  implicit def intToBool(i: Int): Boolean = if (i == 0) false else true
+  implicit def intToBool(i: Int): Boolean = i != 0
 
   case class State(d: Double, bs: Vector[Boolean]) {
     def toMap: Map[Vector[Boolean], Double] = Map(bs -> d)
