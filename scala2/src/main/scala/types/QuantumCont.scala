@@ -1,6 +1,6 @@
 package quantum
 
-// Following the Scheme Pearl papre on Quantum Continuation by Choudhury, Agapiev and Sabry
+// Following the Scheme Pearl paper on Quantum Continuation by Choudhury, Agapiev and Sabry
 
 import scala.util.continuations._
 
