@@ -22,7 +22,9 @@ object QuantumContSim {
   implicit def intToExp(i: Int): Exp = Wire(i)
   implicit def intToBool(i: Int): Boolean = if (i == 0) false else true
 
-  case class State(d: Double, bs: Vector[Boolean])
+  case class State(d: Double, bs: Vector[Boolean]) {
+    def toMap: Map[Vector[Boolean], Double] = Map(bs -> d)
+  }
 
   type Circuit = List[Gate]
 
@@ -51,21 +53,15 @@ object QuantumContSim {
     g match {
       case CCX(x, y, z) if isSet(bs, x) && isSet(bs, y) => State(d, neg(bs, z))
       case CCX(x, y, z) => v
-      case H(x) if isSet(bs, x) =>
-        collect(State(hscale * d, neg(bs, x)), State(-1.0 * hscale * d, bs))
-      case H(x) =>
-        collect(State(hscale * d, bs), State(hscale * d, neg(bs, x)))
-      case _ => throw new Exception("Invalid gate")
+      case H(x) if isSet(bs, x) => collect(State(hscale * d, neg(bs, x)), State(-1.0 * hscale * d, bs))
+      case H(x) => collect(State(hscale * d, bs), State(hscale * d, neg(bs, x)))
     }
   }
 
   def evalCircuit(c: Circuit, v: State): State @cps[Ans] =
     if (c.isEmpty) v else evalCircuit(c.tail, evalGate(c.head, v))
 
-  def runCircuit(c: Circuit, v: State): Ans = reset {
-    val State(d, bs) = evalCircuit(c, v)
-    Map(bs -> d)
-  }
+  def runCircuit(c: Circuit, v: State): Ans = reset { evalCircuit(c, v).toMap }
 
   def prettyPrint(m: Ans): Unit = {
     m.filter(kv => math.abs(kv._2) > 0.001).foreach { case (k, v) =>
