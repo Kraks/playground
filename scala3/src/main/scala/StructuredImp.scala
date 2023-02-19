@@ -59,44 +59,130 @@ import Value._
 type Obj = Map[Int, Value]
 type Sto = Map[Loc, Obj]
 
-def eval(σ: Sto, e: Expr): Value = e match {
-  case Const(x: Int) => VInt(x)
-  case Const(b: Boolean) => VBool(b)
-  case BinOp("+", e1, e2) =>
-    val VInt(i1) = eval(σ, e1)
-    val VInt(i2) = eval(σ, e2)
-    VInt(i1 + i2)
-  case FieldRead(e1, e2) =>
-    val VLoc(ℓ) = eval(σ, e1)
-    val VInt(n) = eval(σ, e2)
-    σ(ℓ)(n)
-}
+/* Figure 4, relational big-step semantics */
 
-def iter(σ: Sto, c: Ctx, e: Expr, s: Stmt, n: Int): Sto =
-  if (n == 0) σ
-  else {
-    val σ0 = iter(σ, c, e, s, n-1)
-    val VBool(b) = eval(σ0, e)
-    if (b) exec(σ0, CWhile(c, n-1), s)
-    else ???
+object Relational {
+  def eval(σ: Sto, e: Expr): Value = e match {
+    case Const(x: Int) => VInt(x)
+    case Const(b: Boolean) => VBool(b)
+    case BinOp("+", e1, e2) =>
+      val VInt(i1) = eval(σ, e1)
+      val VInt(i2) = eval(σ, e2)
+      VInt(i1 + i2)
+    case FieldRead(e1, e2) =>
+      val VLoc(ℓ) = eval(σ, e1)
+      val VInt(n) = eval(σ, e2)
+      σ(ℓ)(n)
   }
 
-def exec(σ: Sto, c: Ctx, s: Stmt): Sto = s match {
-  case Alloc(x: String) =>
-    σ + (SLoc(x) -> Map(0 -> VLoc(DLoc(c)))) + (DLoc(c) -> Map())
-  case Assign(e1, e2, e3) =>
-    val VLoc(ℓ) = eval(σ, e1)
-    val VInt(n) = eval(σ, e2)
-    σ + (ℓ -> (σ(ℓ) + (n -> eval(σ, e3))))
-  case Cond(e, s1, s2) =>
-    val VBool(b) = eval(σ, e)
-    if (b) exec(σ, CThen(c), s1)
-    else exec(σ, CElse(c), s2)
-  case While(e, s) =>
-    val n: Int = ??? // This has to be guess, rending this relational semantics non-executable
-    val σ0 = iter(σ, c, e, s, n)
-    val VBool(b) = eval(σ0, e)
-    if (!b) σ0 else ???
-  case Seq(s1, s2) => exec(exec(σ, CFst(c), s1), CSnd(c), s2)
-  case Skip() => σ
+  def iter(σ: Sto, c: Ctx, e: Expr, s: Stmt, n: Int): Sto =
+    if (n == 0) σ
+    else {
+      val σ0 = iter(σ, c, e, s, n-1)
+      val VBool(b) = eval(σ0, e)
+      if (b) exec(σ0, CWhile(c, n-1), s)
+      else ???
+    }
+
+  def exec(σ: Sto, c: Ctx, s: Stmt): Sto = s match {
+    case Alloc(x: String) =>
+      σ + (SLoc(x) -> Map(0 -> VLoc(DLoc(c)))) + (DLoc(c) -> Map())
+    case Assign(e1, e2, e3) =>
+      val VLoc(ℓ) = eval(σ, e1)
+      val VInt(n) = eval(σ, e2)
+      σ + (ℓ -> (σ(ℓ) + (n -> eval(σ, e3))))
+    case Cond(e, s1, s2) =>
+      val VBool(b) = eval(σ, e)
+      if (b) exec(σ, CThen(c), s1)
+      else exec(σ, CElse(c), s2)
+    case While(e, s) =>
+      val n: Int = ??? // This has to be guess, rending this relational semantics non-executable
+      val σ0 = iter(σ, c, e, s, n)
+      val VBool(b) = eval(σ0, e)
+      if (!b) σ0 else ???
+    case Seq(s1, s2) => exec(exec(σ, CFst(c), s1), CSnd(c), s2)
+    case Skip() => σ
+  }
+}
+
+/* Figure 5, functional semantics */
+
+object Functional {
+  extension[T](t: Option[T])
+    def >>=[U](f: T => Option[U]): Option[U] = t.flatMap(f)
+
+  def toNat(v: Value): Option[Int] = v match
+    case VInt(i) => Some(i)
+    case _ => None
+  def toBool(v: Value): Option[Boolean] = v match
+    case VBool(b) => Some(b)
+    case _ => None
+  def toLoc(v: Value): Option[Loc] = v match
+    case VLoc(l) => Some(l)
+    case _ => None
+
+  def eval(e: Expr)(σ: Sto): Option[Value] = e match {
+    case Const(x: Int) => Some(VInt(x))
+    case Const(b: Boolean) => Some(VBool(b))
+    case BinOp("+", e1, e2) => ???
+      for {
+        i1 <- eval(e)(σ) >>= toNat
+        i2 <- eval(e)(σ) >>= toNat
+      } yield VInt(i1 + i2)
+    case FieldRead(e1, e2) =>
+      for {
+        l <- eval(e1)(σ) >>= toLoc
+        n <- eval(e2)(σ) >>= toNat
+        o <- σ.get(l)
+      } yield o(n)
+  }
+
+  def iter(e: Expr, s: Stmt)(σ: Sto, c: Ctx)(n: Int): Option[Sto] = {
+    def aux(n: Int): Option[Sto] =
+      if (n == 0) Some(σ)
+      else for {
+        σ0 <- aux(n-1)
+        case true <- eval(e)(σ0) >>= toBool
+        σ1 <- exec(s)(σ0, CWhile(c, n-1))
+      } yield σ1
+    aux(n)
+  }
+
+  def ♯(f: Int => Boolean): Int = {
+    def g(i: Int): Int = if (f(i)) i else g(i+1)
+    g(0)
+  }
+
+  def exec(s: Stmt)(σ: Sto, c: Ctx): Option[Sto] = s match {
+    case Alloc(x: String) =>
+      Some(σ + (SLoc(x) -> Map(0 -> VLoc(DLoc(c)))) + (DLoc(c) -> Map()))
+    case Assign(e1, e2, e3) =>
+      for {
+        ℓ <- eval(e1)(σ) >>= toLoc
+        n <- eval(e2)(σ) >>= toNat
+        v <- eval(e3)(σ)
+        o <- σ.get(ℓ)
+      } yield σ + (ℓ -> (o + (n -> v)))
+    case Cond(e, s1, s2) =>
+      for {
+        b <- eval(e)(σ) >>= toBool
+        v <- if (b) exec(s1)(σ, CThen(c)) else exec(s2)(σ, CElse(c))
+      } yield v
+    case While(e, s) =>
+      val n = ♯ { i =>
+        val t = for {
+          σ0 <- iter(e, s)(σ, c)(i)
+          b <- eval(e)(σ0) >>= toBool
+        } yield !b
+        t.getOrElse(true)
+      }
+      iter(e, s)(σ, c)(n)
+    case Seq(s1, s2) =>
+      for {
+        σ0 <- exec(s1)(σ, CFst(c))
+        σ1 <- exec(s2)(σ0, CSnd(c))
+      } yield σ1
+    case Skip() => Some(σ)
+    case Abort() => None
+  }
 }
