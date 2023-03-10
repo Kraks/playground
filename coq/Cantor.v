@@ -1,6 +1,6 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Import Omega.
+Require Import Coq.micromega.Lia.
 Require Import List.
 Import ListNotations.
 
