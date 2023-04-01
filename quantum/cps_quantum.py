@@ -26,10 +26,9 @@ summary: dict[tuple[bool], float] = {}
 class State:
   p: float
   bs: tuple[bool]
-
-def isSet(s: tuple[bool], x: Exp) -> bool:
-  if isinstance(x, int): return s.bs[x]
-  return x
+  def isSet(self, x: Exp) -> bool:
+    if isinstance(x, int): return self.bs[x]
+    return x
 
 def neg(bs: tuple[bool], x: int) -> tuple[bool]:
   ls = list(bs)
@@ -37,27 +36,28 @@ def neg(bs: tuple[bool], x: int) -> tuple[bool]:
   return tuple(ls)
 
 def evalGate(g: Gate, s: State, k: Callable[[State], None]) -> None:
-  if isinstance(g, CCX) and isSet(s, g.x) and isSet(s, g.y):
-    return k(State(s.p, neg(s.bs, g.z)))
-  if isinstance(g, CCX): return k(s)
-  if isinstance(g, H) and isSet(s, g.x):
-    k(State(hscale * s.p, neg(s.bs, g.x)))
-    return k(State(-1.0 * hscale * s.p, s.bs))
+  if isinstance(g, CCX):
+    if s.isSet(g.x) and s.isSet(g.y): k(State(s.p, neg(s.bs, g.z)))
+    else: k(s)
   if isinstance(g, H):
-    k(State(hscale * s.p, neg(s.bs, g.x)))
-    return k(State(hscale * s.p, s.bs))
-  raise NotImplementedError(g)
+    if s.isSet(g.x):
+      k(State(hscale * s.p, neg(s.bs, g.x)))
+      k(State(-1.0 * hscale * s.p, s.bs))
+    else:
+      k(State(hscale * s.p, neg(s.bs, g.x)))
+      k(State(hscale * s.p, s.bs))
 
 def evalCircuit(c: Circuit, s: State, k: Callable[[State], None]) -> None:
-  if len(c) == 0: return k(s)
-  else: return evalGate(c[0], s, lambda s: evalCircuit(c[1:], s, k))
+  if len(c) == 0: k(s)
+  else: evalGate(c[0], s, lambda s: evalCircuit(c[1:], s, k))
 
 def summarize(s: State) -> None:
   if s.bs in summary: summary[s.bs] = summary[s.bs] + s.p
   else: summary[s.bs] = s.p
+
 def runCircuit(c: Circuit, s: State) -> None:
   summary = {}
-  return evalCircuit(c, s, summarize)
+  evalCircuit(c, s, summarize)
 
 #######################
 
