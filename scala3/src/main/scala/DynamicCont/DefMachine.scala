@@ -17,8 +17,8 @@ type Env = Map[String, Value]
 
 enum Value:
   case Clo(x: String, e: Term, ρ: Env)
-  case Cont(c: Ctx)
-
+  case DCont(c: Ctx) // continuations captured by control
+  case SCont(c: Ctx) // continuations captured by shift
 enum Ctx:
   case End()
   case Arg(e: Term, ρ: Env, c: Ctx)
@@ -51,15 +51,16 @@ def step(s: EState): EState | CState = s match {
   case EState(Lam(x, e), ρ, κ, γ) => CState(κ, Clo(x, e, ρ), γ)
   case EState(App(e1, e2), ρ, κ, γ) => EState(e1, ρ, Arg(e2, ρ, κ), γ)
   case EState(Prompt(e), ρ, κ, γ) => EState(e, ρ, End(), κ :: γ)
-  case EState(Control(x, e), ρ, κ, γ) => EState(e, ρ + (x -> Cont(κ)), End(), γ)
+  case EState(Control(x, e), ρ, κ, γ) => EState(e, ρ + (x -> DCont(κ)), End(), γ)
+  case EState(Shift(x, e), ρ, κ, γ) => EState(e, ρ + (x -> DCont(κ)), End(), γ)
 }
 
 def step(s: CState): State = s match {
   case CState(End(), v, γ) => MState(γ, v)
   case CState(Arg(e, ρ, κ), v, γ) => EState(e, ρ, Fun(v, κ), γ)
   case CState(Fun(Clo(x, e, ρ), κ), v, γ) => EState(e, ρ + (x -> v), κ, γ)
-  case CState(Fun(Cont(κ1), κ2), v, γ) => CState(κ1 ★ κ2, v, γ)
-  case CState(Fun(Cont(κ1), κ2), v, γ) => CState(κ1, v, κ2 :: γ)
+  case CState(Fun(DCont(κ1), κ2), v, γ) => CState(κ1 ★ κ2, v, γ)
+  case CState(Fun(SCont(κ1), κ2), v, γ) => CState(κ1, v, κ2 :: γ)
 }
 
 def step(s: MState): CState | Value = s match {
