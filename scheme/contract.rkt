@@ -26,12 +26,14 @@
 
   (define (blame s) (error 'contract "~a" s))
 
+  ;; (int -> bool) -> int -> int
   (define (immediate pred?)
     (λ (val)
       (if (pred? val) val (blame val))))
 
   (define (guard ctc val) (ctc val))
 
+  ;; (int -> int) -> (int -> int) -> (int -> int) -> (int -> int)
   (define (mk-fun-contract dom rng)
     (λ (f)
       (if (procedure? f)
