@@ -20,6 +20,37 @@ Notation "x '⊢>' v" := (update empty x v) (at level 100).
 Definition inclusion {A : Type} (m m' : partial_map A) :=
   forall x v, m x = Some v -> m' x = Some v.
 
+Lemma t_update_eq : forall A (m : total_map A) x v, (t_update m x v) x = v.
+Proof.
+  intros. unfold t_update. destruct (eqb_spec x x) as [Heq|Hneq].
+  reflexivity. intuition.
+Qed.
+
+Lemma update_eq : forall (A : Type) (m : partial_map A) x v,
+  (x ⊢> v ; m) x = Some v.
+Proof.
+  intros. unfold update. rewrite t_update_eq. reflexivity.
+Qed.
+Lemma update_neq : forall X v x1 x2 (m : partial_map X),
+    x2 <> x1 -> (update m x2 v) x1 = m x1.
+Proof.
+  intros. unfold update. unfold t_update.
+  destruct (eqb_spec x2 x1) as [Heq|Hneq]; intuition.
+Qed.
+
+Lemma inclusion_update : forall (A : Type) (m m' : partial_map A)
+                           (x : string) (vx : A),
+  inclusion m m' ->
+  inclusion (x ⊢> vx ; m) (x ⊢> vx ; m').
+Proof.
+  unfold inclusion. intros.
+  destruct (eqb_spec x x0) as [Heq|Hneq].
+  - rewrite Heq. rewrite update_eq. rewrite Heq in H0.
+    erewrite update_eq in H0. auto.
+  - rewrite update_neq. rewrite update_neq in H0.
+    apply H. apply H0. auto. auto.
+Qed.
+
 (* Relations *)
 
 Definition relation (X : Type) := X -> X -> Prop.
@@ -123,7 +154,11 @@ Lemma weakening : forall Γ Γ' t T,
     Γ ⊢ t ∈ T ->
     Γ' ⊢ t ∈ T.
 Proof.
-Admitted.
+  intros. generalize dependent Γ'. induction H0.
+  - eauto.
+  - eauto using inclusion_update.
+  - eauto.
+Qed.
 
 Lemma weakening_empty : forall G t T,
     empty ⊢ t ∈ T ->
