@@ -1,6 +1,7 @@
 Set Warnings "-notation-overridden,-parsing,-deprecated-hint-without-locality".
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
+From Coq Require Import Logic.FunctionalExtensionality.
 
 (* Maps *)
 
@@ -36,6 +37,30 @@ Lemma update_neq : forall X v x1 x2 (m : partial_map X),
 Proof.
   intros. unfold update. unfold t_update.
   destruct (eqb_spec x2 x1) as [Heq|Hneq]; intuition.
+Qed.
+
+Lemma update_shadow : forall A (m : partial_map A) v1 v2 x,
+    update (update m x v1) x v2 = update m x v2. 
+Proof.
+  intros. unfold update. unfold t_update.
+  apply functional_extensionality. intros.
+  destruct (eqb_spec x x0); reflexivity.
+Qed.
+
+Lemma t_update_permute : forall X v1 v2 x1 x2 (m : total_map X),
+  x2 <> x1 -> (t_update (t_update m x2 v2) x1 v1)
+            = (t_update (t_update m x1 v1) x2 v2).
+Proof.
+  intros. unfold t_update.
+  apply functional_extensionality. intros.
+  destruct (eqb_spec x1 x); destruct (eqb_spec x2 x); subst; intuition.
+Qed.
+
+Lemma update_permute : forall (X : Type) v1 v2 x1 x2 (m : partial_map X),
+  x2 <> x1 -> (update (update m x2 v2) x1 v1)
+            = (update (update m x1 v1) x2 v2).
+Proof.
+  intros. unfold update. apply t_update_permute. apply H.
 Qed.
 
 Lemma inclusion_update : forall (A : Type) (m m' : partial_map A)
@@ -173,13 +198,30 @@ Lemma subst_preserves_typing : forall G x U t v T,
     (x ⊢> U ; G) ⊢ t ∈ T ->
     empty ⊢ v ∈ U ->
     G ⊢ (subst x v t) ∈ T.
-Proof. Admitted.
+Proof.
+  intros ? ? ? ? ? ? Ht Hv.
+  generalize dependent G. generalize dependent T.
+  induction t; intros; inversion Ht; subst; simpl; eauto.
+  - destruct (eqb_spec x s); subst.
+    + rewrite update_eq in H1. inversion H1.
+      subst. apply weakening_empty. auto.
+    + rewrite update_neq in H1; eauto.
+  - destruct (eqb_spec x s); subst.
+    + rewrite update_shadow in H4. eauto.
+    + econstructor. apply IHt. rewrite update_permute; eauto.
+Qed.
 
 Theorem preservation : forall t t' T,
     empty ⊢ t ∈ T ->
     t --> t' ->
     empty ⊢ t' ∈ T.
-Proof. Admitted.
+Proof.
+  intros. generalize dependent t'. remember empty as Γ. induction H; intros.
+  - subst. inversion H.
+  - inversion H0.
+  - inversion H1; subst; eauto.
+    eapply subst_preserves_typing; eauto. inversion H; subst; eauto.
+Qed.
 
 (* Context invariance *)
 
@@ -205,7 +247,15 @@ Lemma context_invariance : forall Γ Γ' t S,
     Γ ⊢ t ∈ S ->
     (forall x, appears_free_in x t -> Γ x = Γ' x) ->
     Γ' ⊢ t ∈ S.
-Proof. Admitted.
+Proof.
+  intros. generalize dependent Γ'. induction H; intros.
+  - apply T_Var. rewrite <- H0; auto.
+  - apply T_Abs. apply IHhas_type. intros.
+    destruct (eqb_spec x x0); subst.
+    + rewrite update_eq. rewrite update_eq. auto.
+    + rewrite update_neq; auto. rewrite update_neq; auto.
+  - eapply T_App. auto. auto.
+Qed.
   
 Lemma free_in_context : forall x t T Γ,
     appears_free_in x t ->
