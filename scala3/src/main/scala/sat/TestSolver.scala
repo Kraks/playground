@@ -14,8 +14,9 @@ object TestSolver {
   import Utils._
   def main(args: Array[String]): Unit = {
     val bench50 = test(50, 218)(_)
+    time { bench50(f => dplb(f, List()).nonEmpty) }
     //time { bench50(f => dpli(f, List()).nonEmpty) }
-    time { bench50(f => dpll(f, List()).nonEmpty) }
+    //time { bench50(f => dpll(f, List()).nonEmpty) }
     //time { bench50(f => dp(f, List()).nonEmpty) }
   }
 }
