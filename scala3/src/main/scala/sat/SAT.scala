@@ -156,7 +156,7 @@ case class Formula(cs: List[Clause]) {
 
 // DP = Unit prop + Pure var elim + Resolution
 def dp(f: Formula, ρ: Asn): Option[Asn] = {
-  println(s"${f.nClauses}, ${f.nVars}")
+  //println(s"${f.nClauses}, ${f.nVars}")
   if (f.isEmpty) return Some(ρ)
   if (f.hasUnsatClause) return None
   if (f.hasUnitClause) {
@@ -195,7 +195,9 @@ def dpll(f: Formula, assgn: Asn): Option[Asn] = {
 abstract class Decision {
   val lit: Lit
 }
+// Assumed as one half of a case-split
 case class Guessed(lit: Lit) extends Decision
+// deduced by unit propagation from literals assumed earlier
 case class Deduced(lit: Lit) extends Decision
 type Trail = List[Decision]
 
@@ -205,19 +207,24 @@ def unassigned(f: Formula, trail: Trail): Set[Lit] = {
   s1 diff s2
 }
 
-def unitPropagateAux(f: Formula, asn: Set[Int], trail: Trail): (Formula, Set[Int], Trail) = {
-  val f1 = f.cs.map { c =>
-    c.xs.foldLeft(Set()) { case (acc, x) =>
-      if (asn(-x)) acc else acc + x
-    }
+// f is the naked representation of a list of clause
+def unitPropagateAux(f: List[List[Int]], asn: Set[Int], trail: Trail): (List[List[Int]], Set[Int], Trail) = {
+  val f1: List[List[Int]] = f.map { c => c.filter(x => !asn(-x)) }
+  val newUnits = f1.foldLeft(Set[Int]()) { case (acc, cls) =>
+    if (cls.size == 1 && !asn(cls.head)) acc + cls.head else acc
   }
-  ???
+  if (newUnits.isEmpty) (f1, asn, trail)
+  else {
+    val trail1 = newUnits.toList.map(Deduced(_)) ++ trail
+    val asn1 = newUnits ++ asn
+    unitPropagateAux(f1, asn1, trail1)
+  }
 }
 
 def unitPropagate(f: Formula, trail: Trail): (Formula, Trail) = {
   val fn = trail.map(_.lit).toSet
-  val (f1, _, trail1) = unitPropagateAux(f, fn, trail)
-  (f1, trail1)
+  val (f1, _, trail1) = unitPropagateAux(f.cs.map(_.xs), fn, trail)
+  (Formula(f1.map(Clause(_))), trail1)
 }
 
 def backtrack(trail: Trail): Trail =
@@ -243,6 +250,5 @@ def dpli(f: Formula, trail: Trail): Option[Asn] = {
   }
 }
 
-
 // TODO:
-// CDCL = Unit prop + Pure var elim + Conflict analysis + Backjumping
+// DPLP = Unit prop + Pure var elim + _Simple_ conflict analysis + Backjumping
