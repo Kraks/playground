@@ -1,0 +1,41 @@
+Specification "fsub".
+
+% Preservation
+
+Theorem sub_arrow : forall S T1 T2,
+  {sub S (arrow T1 T2)} ->
+  exists S1 S2, S = arrow S1 S2.
+   induction on 1.
+   intros. case H1.
+   search. apply IH to H3. apply IH to H2. search.
+   search. 
+
+Theorem invert_sub_arrow : forall S1 S2 T1 T2,
+  {sub (arrow S1 S2) (arrow T1 T2)} -> {sub T1 S1} /\ {sub S2 T2}.
+  induction on 1. intros. case H1.
+  search. apply sub_arrow to H3.
+    apply IH to H2. apply IH to H3. search.
+  search.
+   
+Theorem invert_of_abs : forall S1 E T1 T2,
+  {typeof (abs S1 E) (arrow T1 T2)} ->
+   exists S2, nabla x,
+    {typeof x S1 |- typeof (E x) S2} /\
+    {sub T1 S1} /\ {sub S2 T2}.     
+  induction on 1. intros. case H1.
+  search. apply sub_arrow to H3.     
+     apply invert_sub_arrow to H3.
+  apply IH to H2. search.   
+     
+Theorem preservation : forall E E' T,
+  {typeof E T} -> {step E E'} -> {typeof E' T}.
+   induction on 1. intros.
+   case H1.
+   % case 1 - E = abs T1 E1.
+   case H2.
+   % case 2 - E = app E1 E2.
+   case H2.
+   % case 2.1 beta
+   apply invert_of_abs to H3. inst H6 with n1 = E2.
+   assert {typeof E2 T1}. cut H9 with H10. search. 
+   % case 2.2
