@@ -15,13 +15,16 @@ sub (all S1 (x\ S2 x)) (all T1 (x\ T2 x)) :-
 typeof (abs T1 E) (arrow T1 T2) :-
   pi x\ typeof x T1 => typeof (E x) T2.
 typeof (app E1 E2) T12 :-
-  typeof E1 (arrow T1 T2),
-  typeof T2 T1.
+  typeof E1 (arrow T11 T12),
+  typeof E2 T11.
 typeof (tabs T1 E) (all T1 T2) :-
   pi x\ sub x T1 => typeof (E x) (T2 x).
 typeof (tapp E T2) (T12 T2) :-
   typeof E (all T11 T12),
   sub T2 T11.
+typeof E T :-
+  typeof E S,
+  sub S T.
 
 % small-step reduction
 
