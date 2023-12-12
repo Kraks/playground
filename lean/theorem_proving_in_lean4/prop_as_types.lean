@@ -97,3 +97,23 @@ example (h : p ∧ q) : q ∧ p :=
   show q from And.right h
 
 -- Classical logic
+
+open Classical
+
+#check em p
+
+-- double-negation elimination
+theorem dne {p: Prop} (h : ¬¬p) : p :=
+  Or.elim (em p)
+    (fun hp : p => hp)
+    (fun hnp : ¬p => absurd hnp h)
+
+example (h : ¬¬p) : p :=
+  byCases
+    (fun h1 : p => h1)
+    (fun h1 : ¬p => absurd h1 h)
+
+-- proof by contradiction
+
+example (h : ¬¬p) : p :=
+  byContradiction (fun h1 : ¬p => show False from h h1)
