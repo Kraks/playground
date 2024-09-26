@@ -4,7 +4,7 @@ package adjusted.machine
 // A Dynamic Continuation-Passing Style for Dynamic Delimited Continuations
 // https://dl.acm.org/doi/pdf/10.1145/2794078
 
-// the "adjusted" cbv abstract machine with F (Control) and # (Prompt)
+// Fig 2, the "adjusted" cbv abstract machine with F (Control) and # (Prompt)
 
 enum Term:
   case Var(x: String)
