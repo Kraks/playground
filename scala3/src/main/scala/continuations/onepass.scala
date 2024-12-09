@@ -30,7 +30,6 @@ object Examples {
                App(Lam("y", App(Lam("z", Var("c")),
                                 App(Var("a"), Var("b")))),
                    Var("d")))
-
 }
 
 import Examples._
