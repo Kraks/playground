@@ -1,4 +1,4 @@
-package cps.effhandler
+package continuation.handler
 // https://www.is.ocha.ac.jp/~asai/jpapers/ppl/fujii22.pdf
 
 enum Term:
