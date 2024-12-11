@@ -24,7 +24,7 @@ digraph G {
  n5_mu -> n1_kr, Init4
 
  // t1 = np.block([[H, Zr2], [Zr2, H]])
- n6_bl -> H, Zr2, Zr2, H
+ //n6_bl -> H, Zr2, Zr2, H
  // t2 = np.block([[CNOT, Zr4], [Zr4, CNOT]])
  // or n7_bl -> CNOT, Zr4, Zr4, CNOT
  n7_bl -> Id2, Zr2, Zr2, InvId2, Zr4, Zr4, Id2, Zr2, Zr2, InvId2
