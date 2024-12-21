@@ -144,14 +144,14 @@ def step(s: State): Option[State] = s match
     Some(State(h + (x -> rhs), body, k))
   case _ => None
 
-def reduce(s: State): State = 
+def reduce(s: State): State =
   def intermediate(s: State): Boolean = !s.e.isInstanceOf[Var]
   def drive(h: History, s: State): State =
     step(s) match
-      case Some(s1) => 
+      case Some(s1) =>
         if (intermediate(s1)) drive(h, s1)
         else terminate(h, s1) match
-          case Stop() => s1 
+          case Stop() => s1
           case Continue(h1) => drive(h1, s1)
       case None => s
   drive(mtHistory, s)
@@ -165,11 +165,11 @@ def terminate(h: History, s: State): TermRes =
 
 def stateMatch(s1: State, s2: State): Option[Map[Var, Var]] = ???
 
-def memo(opt: State => Expr)(s: State): Expr = 
+def memo(opt: State => Expr)(s: State): Expr =
   val ps = getPromises
-  val res = 
+  val res =
     for p <- ps
-        Some(rn) <- List(stateMatch(p.s, s))
+      case Some(rn) <- List(stateMatch(p.s, s))
     yield apps(p.name, p.fvs.map(rn))
   if (res.nonEmpty) res(0)
   else {
