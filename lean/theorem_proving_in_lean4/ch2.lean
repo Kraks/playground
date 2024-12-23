@@ -71,10 +71,12 @@ namespace Foo
   #check Foo.fa
 end Foo
 
-#check Foo.
+#check Foo.a
 
 open Foo
 #check a
+
+-- implicit arguments
 
 section
   variable {α : Type u}
@@ -85,3 +87,14 @@ end
 #check ident
 #check ident 4
 #check ident "hello"
+
+#check List.nil
+#check id
+
+#check (List.nil : List Nat)
+#check (id : Nat → Nat)
+
+-- provide implicit arguments explicitly
+#check @id
+#check @id Nat
+#check @id Bool true
