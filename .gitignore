@@ -1,6 +1,10 @@
-target
 .bsp
 .vscode
 .metals
+.DS_Store
+
 \#*\#
+
+target
+.bloop
 *~
