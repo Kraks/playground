@@ -85,8 +85,6 @@ case class Cont(k: (Val, MCont) => Val)
 
 import Val._
 
-case object MtTrail
-type Trail = MtTrail.type | Cont
 case class Handler(h: (Val, Val, Cont, MCont) => Val)
 type MCont = List[(Cont, Handler)]
 
