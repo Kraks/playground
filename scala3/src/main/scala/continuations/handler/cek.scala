@@ -79,9 +79,3 @@ def step(s: State): State = s match
 def drive(s: State): State =
   println(s)
   if isDone(s) then s else drive(step(s))
-
-@main def test(): Unit = {
-  val s = inject(p1)
-  val s1 = drive(s)
-  assert(extract(s1) == IntV(10))
-}
