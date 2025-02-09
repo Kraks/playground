@@ -50,11 +50,17 @@ def kappend(k1: Addr, k2: Addr, st: Store): (Addr, Store) =
 
 val mtPKAddr = KAddr(0)
 val mtKAddr = KAddr(1)
+/*
 def inject(e: Comp): State =
   val kaddr2 = KAddr(2)
   val cont0 = Frame(mtPKAddr, HanClo(Map.empty, Return("x", Ret(Var("x")))), mtKAddr)
   val st0 = Map(mtPKAddr -> PKntV(MtPK), mtKAddr -> KntV(MtK), kaddr2 -> KntV(cont0))
   PState(e, Map.empty, st0, kaddr2)
+*/
+
+def inject(e: Comp): State =
+  val st0 = Map(mtPKAddr -> PKntV(MtPK), mtKAddr -> KntV(MtK))
+  PState(Handle(e, Return("x", Ret(Var("x")))), Map.empty, st0, mtKAddr)
 
 def prim(op: String, v1: RValue, v2: RValue): RValue = (v1, v2) match
   case (IntV(i), IntV(j)) => op match
