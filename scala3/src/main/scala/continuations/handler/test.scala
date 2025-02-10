@@ -36,4 +36,17 @@ import continuation.handler.syntax.*
     assert(extract(drive(inject(p5), n)) == IntV(51))
     assert(extract(drive(inject(p6), n)) == IntV(42))
   }
+
+  {
+    import continuation.handler.ceskStar2.*
+    import RValue.*
+
+    val n = 100
+    assert(extract(drive(inject(p2), n)) == IntV(4))
+    assert(extract(drive(inject(p1), n)) == IntV(10))
+    assert(extract(drive(inject(p3), n)) == IntV(144))
+    assert(extract(drive(inject(p4), n)) == IntV(51))
+    assert(extract(drive(inject(p5), n)) == IntV(51))
+    assert(extract(drive(inject(p6), n)) == IntV(42))
+  }
 }
