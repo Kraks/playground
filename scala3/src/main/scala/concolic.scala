@@ -153,7 +153,7 @@ abstract class Symbolic {
 }
 
 // A monolithic concolic interpreter
-class Concolic_Mono {
+class ConcolicMono {
   import Helper._
 
   trait SymV
@@ -234,42 +234,39 @@ class Concolic_Mono {
 class Concolic2 { concolic =>
   import Helper._
 
-  trait SymV
-  case class SymVar(x: String) extends SymV
-  case class SymOp(op: String, args: List[PrimValue]) extends SymV
+  enum SymV:
+    case SymVar(x: String)
+    case SymOp(op: String, args: List[PrimValue])
+  import SymV.*
 
   type PrimValue = IntV | SymV
 
   case class CState(s: Map[Var, IntV]) {
-    def apply(x: Value): IntV = x match {
+    def apply(x: Value): IntV = x match
       case x@Var(_) => s(x)
       case v@IntV(_) => v
-    }
     def +(xv: (Var, IntV)): CState = CState(s + xv)
   }
   case class SState(s: Map[Var, PrimValue], pc: Set[SymV]) {
-    def apply(x: Value): PrimValue = x match {
+    def apply(x: Value): PrimValue = x match
       case x@Var(_) => s(x)
       case v@IntV(_) => v
-    }
     def +(xv: (Var, PrimValue)): SState = SState(s + xv, pc)
     def +(c: SymV): SState = SState(s, pc + c)
   }
 
   def primEval_c(op: String, n1: IntV, n2: IntV): IntV =
-    op match {
+    op match
       case "+" => IntV(n1.x + n2.x)
       case "-" => IntV(n1.x - n2.x)
       case "*" => IntV(n1.x * n2.x)
       case "/" => IntV(n1.x / n2.x)
-    }
 
   def primEval_s(op: String, v1: PrimValue, v2: PrimValue): PrimValue =
-    (v1, v2) match {
+    (v1, v2) match
       case (s1: SymV, s2) => SymOp(op, List(s1, s2))
       case (s1, s2: SymV) => SymOp(op, List(s1, s2))
       case (v1: IntV, v2: IntV) => primEval_c(op, v1, v2)
-    }
 
   type CCont[A] = (IntV, CState) => A
   type SCont[A] = (PrimValue, SState) => A
@@ -352,7 +349,6 @@ class Concolic2 { concolic =>
 
   def runFunc[A](f: Func, v_c: IntV, v_s: PrimValue, cs: CState, ss: SState, k: Cont[A])(using p: Program): A =
     runFunc_c(f, v_c, cs, (v_c, cs) => runFunc_s(f, v_s, ss, (v_s, ss) => k(v_c, v_s, cs, ss)))
-
 }
 
 object Test {
@@ -377,7 +373,7 @@ object Test {
     val C = new Concrete
     println(C.runProg(p, IntV(42)))
 
-    val CM = new Concolic_Mono
+    val CM = new ConcolicMono
     println(CM.runProg(p, IntV(42), CM.SymVar("a")))
   }
 }
