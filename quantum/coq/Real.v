@@ -1,5 +1,10 @@
 (* https://people.cs.uchicago.edu/~caldwellb/vqc/toc.html *)
 
+Require Reals.
+Require Psatz.
+Require Ring.
+Require Field.
+
 (* Axiomatizing Real *)
 
 Module OurR.
@@ -94,8 +99,8 @@ Qed.
 
 (* ring and field tactics *)
 
-Require Export Ring.
-Require Export Field.
+Export Ring.
+Export Field.
 
 Lemma R_Ring_Theory : ring_theory R0 R1 Rplus Rmult Rminus Ropp eq.
 Proof.
@@ -152,7 +157,7 @@ Definition Rge (r1 r2 : R) : Prop := Rgt r1 r2 \/ r1 = r2.
 Infix "<=" := Rle : R_scope.
 Infix ">=" := Rge : R_scope.
 Infix ">" := Rgt : R_scope.
-                                                  
+
 Axiom total_order_T : forall r1 r2 : R, {r1 < r2} + {r1 = r2} + {r1 > r2}.
 Axiom Rlt_asym : forall r1 r2 : R, r1 < r2 -> ~ (r2 < r1).
 Axiom Rlt_trans : forall r1 r2 r3 : R, r1 < r2 -> r2 < r3 -> r1 < r3.

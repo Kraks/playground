@@ -6,6 +6,7 @@ import torch.optim as optim
 import torch.utils.data as data
 import math
 import copy
+import torch.fx as fx
 
 class MultiHeadAttention(nn.Module):
   def __init__(self, d_model, num_heads):
@@ -153,6 +154,7 @@ max_seq_length = 100
 dropout = 0.1
 
 transformer = Transformer(src_vocab_size, tgt_vocab_size, d_model, num_heads, num_layers, d_ff, max_seq_length, dropout)
+print(transformer)
 
 # Generate random sample data
 src_data = torch.randint(1, src_vocab_size, (64, max_seq_length))  # (batch_size, seq_length)
@@ -163,13 +165,15 @@ optimizer = optim.Adam(transformer.parameters(), lr=0.0001, betas=(0.9, 0.98), e
 
 transformer.train()
 
-for epoch in range(20):
+for epoch in range(1):
     optimizer.zero_grad()
     output = transformer(src_data, tgt_data[:, :-1]) # XXX why ignoring the last one?
     loss = criterion(output.contiguous().view(-1, tgt_vocab_size), tgt_data[:, 1:].contiguous().view(-1))
     loss.backward()
     optimizer.step()
     print(f"Epoch: {epoch+1}, Loss: {loss.item()}")
+
+exit()
 
 transformer.eval()
 
