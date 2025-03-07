@@ -30,7 +30,6 @@ n_layer = 6
 dropout = 0.2
 
 # some better hyperparameters:
-"""
 eval_interval = 100
 max_iters = 5000
 learning_rate=3e-4
@@ -39,7 +38,6 @@ block_size = 256
 n_embd = 300
 n_layer = 10
 dropout = 0.2
-"""
 
 ## Tokenization
 
@@ -280,3 +278,6 @@ print(idx)
 # test the same generate() function, now with the trained model
 print("Output:")
 print(decode(m.generate(idx, max_new_tokens=500).tolist()[0]))
+
+onnx_program = torch.onnx.dynamo_export(m, idx)
+onnx_program.save("gpt.onnx")
