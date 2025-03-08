@@ -104,6 +104,7 @@ def step(e: State): State =
 
 def run(e: Expr): Expr =
   def loop(e: State): Expr =
+    //println(e)
     e match
       case SNorm(t) => t
       case _ => loop(step(e))
