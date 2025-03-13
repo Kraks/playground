@@ -129,15 +129,3 @@ example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
   . intro
     | Or.inl ⟨hp, hq⟩ => constructor; assumption; apply Or.inl; assumption
     | Or.inr ⟨hp, hr⟩ => constructor; assumption; apply Or.inr; assumption
-
--- Tactic combinator
-
-example (p q : Prop) (hp : p) : p ∨ q :=
-  by apply Or.inl; assumption
-
--- t1 <;> t2 applies t1 then t2 to all resulting subgoals
-example (p q : Prop) (hp : p) (hq : q) : p ∧ q :=
-  by apply And.intro <;> assumption
-
-example (p q : Prop) (hp : p) : p ∨ q :=
-  by first | apply Or.inl; assumption | apply Or.inr; assumption

@@ -1,0 +1,720 @@
+DIGEST 0950b0eca1d5c316f3d35268e6435018
+FVQC.Real
+R70:74 Coq.Reals.Reals <> <> lib
+R85:89 Coq.micromega.Psatz <> <> lib
+R100:103 Coq.setoid_ring.Ring <> <> lib
+R114:118 Coq.setoid_ring.Field <> <> lib
+mod 154:157 <> OurR
+ax 171:171 OurR R
+ax 247:248 OurR R0
+R252:252 VQC.Real OurR R defax
+ax 265:266 OurR R1
+R270:270 VQC.Real OurR R defax
+ax 284:288 OurR Rplus
+R293:296 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R292:292 VQC.Real OurR R defax
+R298:301 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R297:297 VQC.Real OurR R defax
+R302:302 VQC.Real OurR R defax
+ax 315:319 OurR Rmult
+R324:327 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R323:323 VQC.Real OurR R defax
+R329:332 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R328:328 VQC.Real OurR R defax
+R333:333 VQC.Real OurR R defax
+ax 346:349 OurR Ropp
+R354:357 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R353:353 VQC.Real OurR R defax
+R358:358 VQC.Real OurR R defax
+ax 371:374 OurR Rinv
+R379:382 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R378:378 VQC.Real OurR R defax
+R383:383 VQC.Real OurR R defax
+R399:403 VQC.Real OurR Rplus defax
+not 392:392 OurR ::R_scope:x_'+'_x
+R429:433 VQC.Real OurR Rmult defax
+not 422:422 OurR ::R_scope:x_'*'_x
+R465:468 VQC.Real OurR Ropp defax
+not 455:455 OurR ::R_scope:'-'_x
+R503:506 VQC.Real OurR Rinv defax
+not 493:493 OurR ::R_scope:'/'_x
+def 534:539 OurR Rminus
+R548:548 VQC.Real OurR R defax
+binder 542:543 <> r1:8
+binder 545:546 <> r2:9
+R553:553 VQC.Real OurR R defax
+R560:562 VQC.Real OurR ::R_scope:x_'+'_x not
+R558:559 VQC.Real <> r1:8 var
+R563:564 VQC.Real OurR ::R_scope:'-'_x not
+R565:566 VQC.Real <> r2:9 var
+def 580:583 OurR Rdiv
+R592:592 VQC.Real OurR R defax
+binder 586:587 <> r1:10
+binder 589:590 <> r2:11
+R597:597 VQC.Real OurR R defax
+R604:606 VQC.Real OurR ::R_scope:x_'*'_x not
+R602:603 VQC.Real <> r1:10 var
+R607:608 VQC.Real OurR ::R_scope:'/'_x not
+R609:610 VQC.Real <> r2:11 var
+R626:631 VQC.Real OurR Rminus def
+not 619:619 OurR ::R_scope:x_'-'_x
+R657:660 VQC.Real OurR Rdiv def
+not 650:650 OurR ::R_scope:x_'/'_x
+def 683:685 OurR INR
+R692:694 Coq.Init.Datatypes <> nat ind
+binder 688:688 <> n:12
+R699:699 VQC.Real OurR R defax
+R712:712 VQC.Real <> n:12 var
+R723:723 Coq.Init.Datatypes <> O constr
+R728:729 VQC.Real OurR R0 defax
+R740:741 VQC.Real OurR R1 defax
+R747:747 Coq.Init.Datatypes <> S constr
+R757:759 VQC.Real OurR ::R_scope:x_'+'_x not
+R755:756 VQC.Real OurR R1 defax
+R760:762 VQC.Real <> INR:13 def
+R775:798 VQC.Real OurR INR def
+R808:810 VQC.Real OurR ::R_scope:x_'+'_x not
+R824:826 VQC.Real OurR ::R_scope:x_'+'_x not
+ax 851:859 OurR R1_neq_R0
+R868:871 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R863:865 VQC.Real OurR INR def
+R872:874 VQC.Real OurR INR def
+ax 885:894 OurR Rplus_comm
+R913:913 VQC.Real OurR R defax
+binder 905:906 <> r1:16
+binder 908:909 <> r2:17
+R923:925 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R918:920 VQC.Real OurR ::R_scope:x_'+'_x not
+R916:917 VQC.Real <> r1:16 var
+R921:922 VQC.Real <> r2:17 var
+R928:930 VQC.Real OurR ::R_scope:x_'+'_x not
+R926:927 VQC.Real <> r2:17 var
+R931:932 VQC.Real <> r1:16 var
+ax 941:951 OurR Rplus_assoc
+R973:973 VQC.Real OurR R defax
+binder 962:963 <> r1:19
+binder 965:966 <> r2:20
+binder 968:969 <> r3:21
+R988:990 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R983:985 VQC.Real OurR ::R_scope:x_'+'_x not
+R978:980 VQC.Real OurR ::R_scope:x_'+'_x not
+R976:977 VQC.Real <> r1:19 var
+R981:982 VQC.Real <> r2:20 var
+R986:987 VQC.Real <> r3:21 var
+R993:996 VQC.Real OurR ::R_scope:x_'+'_x not
+R1004:1004 VQC.Real OurR ::R_scope:x_'+'_x not
+R991:992 VQC.Real <> r1:19 var
+R999:1001 VQC.Real OurR ::R_scope:x_'+'_x not
+R997:998 VQC.Real <> r2:20 var
+R1002:1003 VQC.Real <> r3:21 var
+ax 1013:1023 OurR Rplus_opp_r
+R1038:1038 VQC.Real OurR R defax
+binder 1034:1034 <> r:23
+R1047:1049 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1042:1044 VQC.Real OurR ::R_scope:x_'+'_x not
+R1041:1041 VQC.Real <> r:23 var
+R1045:1045 VQC.Real OurR ::R_scope:'-'_x not
+R1046:1046 VQC.Real <> r:23 var
+ax 1059:1067 OurR Rplus_0_l
+R1082:1082 VQC.Real OurR R defax
+binder 1078:1078 <> r:25
+R1090:1092 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1086:1088 VQC.Real OurR ::R_scope:x_'+'_x not
+R1089:1089 VQC.Real <> r:25 var
+R1093:1093 VQC.Real <> r:25 var
+prf 1103:1111 OurR Rplus_0_r
+R1126:1126 VQC.Real OurR R defax
+binder 1122:1122 <> r:27
+R1134:1136 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1130:1132 VQC.Real OurR ::R_scope:x_'+'_x not
+R1129:1129 VQC.Real <> r:27 var
+R1137:1137 VQC.Real <> r:27 var
+R1165:1174 VQC.Real OurR Rplus_comm prfax
+R1165:1174 VQC.Real OurR Rplus_comm prfax
+R1165:1174 VQC.Real OurR Rplus_comm prfax
+R1183:1191 VQC.Real OurR Rplus_0_l prfax
+R1183:1191 VQC.Real OurR Rplus_0_l prfax
+prf 1206:1216 OurR Rplus_opp_l
+binder 1227:1227 <> r:28
+R1236:1238 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1232:1234 VQC.Real OurR ::R_scope:x_'+'_x not
+R1230:1230 VQC.Real OurR ::R_scope:'-'_x not
+R1231:1231 VQC.Real <> r:28 var
+R1235:1235 VQC.Real <> r:28 var
+R1267:1276 VQC.Real OurR Rplus_comm prfax
+R1267:1276 VQC.Real OurR Rplus_comm prfax
+R1267:1276 VQC.Real OurR Rplus_comm prfax
+R1285:1295 VQC.Real OurR Rplus_opp_r prfax
+R1285:1295 VQC.Real OurR Rplus_opp_r prfax
+prf 1310:1315 OurR Ropp_0
+R1321:1323 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1319:1319 VQC.Real OurR ::R_scope:'-'_x not
+R1348:1356 VQC.Real OurR Rplus_0_l prfax
+R1359:1359 VQC.Real OurR ::R_scope:'-'_x not
+R1348:1356 VQC.Real OurR Rplus_0_l prfax
+R1359:1359 VQC.Real OurR ::R_scope:'-'_x not
+R1348:1356 VQC.Real OurR Rplus_0_l prfax
+R1359:1359 VQC.Real OurR ::R_scope:'-'_x not
+R1373:1383 VQC.Real OurR Rplus_opp_r prfax
+R1373:1383 VQC.Real OurR Rplus_opp_r prfax
+R1373:1383 VQC.Real OurR Rplus_opp_r prfax
+prf 1404:1417 OurR Rplus_cancel_l
+binder 1428:1429 <> r1:29
+binder 1431:1432 <> r2:30
+binder 1434:1435 <> r3:31
+R1455:1458 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1445:1447 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1440:1442 VQC.Real OurR ::R_scope:x_'+'_x not
+R1438:1439 VQC.Real <> r1:29 var
+R1443:1444 VQC.Real <> r2:30 var
+R1450:1452 VQC.Real OurR ::R_scope:x_'+'_x not
+R1448:1449 VQC.Real <> r1:29 var
+R1453:1454 VQC.Real <> r3:31 var
+R1461:1463 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1459:1460 VQC.Real <> r2:30 var
+R1464:1465 VQC.Real <> r3:31 var
+R1498:1506 VQC.Real OurR Rplus_0_l prfax
+R1498:1506 VQC.Real OurR Rplus_0_l prfax
+R1498:1506 VQC.Real OurR Rplus_0_l prfax
+R1521:1531 VQC.Real OurR Rplus_opp_l thm
+R1521:1531 VQC.Real OurR Rplus_opp_l thm
+R1521:1531 VQC.Real OurR Rplus_opp_l thm
+R1546:1556 VQC.Real OurR Rplus_assoc prfax
+R1546:1556 VQC.Real OurR Rplus_assoc prfax
+R1546:1556 VQC.Real OurR Rplus_assoc prfax
+R1586:1596 VQC.Real OurR Rplus_assoc prfax
+R1586:1596 VQC.Real OurR Rplus_assoc prfax
+R1586:1596 VQC.Real OurR Rplus_assoc prfax
+R1607:1617 VQC.Real OurR Rplus_opp_l thm
+R1607:1617 VQC.Real OurR Rplus_opp_l thm
+R1607:1617 VQC.Real OurR Rplus_opp_l thm
+R1628:1636 VQC.Real OurR Rplus_0_l prfax
+R1628:1636 VQC.Real OurR Rplus_0_l prfax
+R1628:1636 VQC.Real OurR Rplus_0_l prfax
+prf 1657:1665 OurR R0_unique
+binder 1676:1677 <> r1:32
+binder 1679:1680 <> r2:33
+R1695:1698 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1690:1692 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1685:1687 VQC.Real OurR ::R_scope:x_'+'_x not
+R1683:1684 VQC.Real <> r1:32 var
+R1688:1689 VQC.Real <> r2:33 var
+R1693:1694 VQC.Real <> r1:32 var
+R1701:1703 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1699:1700 VQC.Real <> r2:33 var
+R1743:1751 VQC.Real OurR Rplus_0_r thm
+R1743:1751 VQC.Real OurR Rplus_0_r thm
+R1743:1751 VQC.Real OurR Rplus_0_r thm
+R1766:1779 VQC.Real OurR Rplus_cancel_l thm
+R1766:1779 VQC.Real OurR Rplus_cancel_l thm
+ax 1803:1812 OurR Rmult_comm
+R1831:1831 VQC.Real OurR R defax
+binder 1823:1824 <> r1:34
+binder 1826:1827 <> r2:35
+R1841:1843 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1836:1838 VQC.Real OurR ::R_scope:x_'*'_x not
+R1834:1835 VQC.Real <> r1:34 var
+R1839:1840 VQC.Real <> r2:35 var
+R1846:1848 VQC.Real OurR ::R_scope:x_'*'_x not
+R1844:1845 VQC.Real <> r2:35 var
+R1849:1850 VQC.Real <> r1:34 var
+ax 1859:1869 OurR Rmult_assoc
+binder 1880:1881 <> r1:37
+binder 1883:1884 <> r2:38
+binder 1886:1887 <> r3:39
+R1902:1904 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1897:1899 VQC.Real OurR ::R_scope:x_'*'_x not
+R1892:1894 VQC.Real OurR ::R_scope:x_'*'_x not
+R1890:1891 VQC.Real <> r1:37 var
+R1895:1896 VQC.Real <> r2:38 var
+R1900:1901 VQC.Real <> r3:39 var
+R1907:1910 VQC.Real OurR ::R_scope:x_'*'_x not
+R1918:1918 VQC.Real OurR ::R_scope:x_'*'_x not
+R1905:1906 VQC.Real <> r1:37 var
+R1913:1915 VQC.Real OurR ::R_scope:x_'*'_x not
+R1911:1912 VQC.Real <> r2:38 var
+R1916:1917 VQC.Real <> r3:39 var
+ax 1927:1932 OurR Rinv_l
+R1947:1947 VQC.Real OurR R defax
+binder 1943:1943 <> r:41
+R1956:1959 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1951:1954 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1950:1950 VQC.Real <> r:41 var
+R1967:1969 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1963:1965 VQC.Real OurR ::R_scope:x_'*'_x not
+R1960:1961 VQC.Real OurR ::R_scope:'/'_x not
+R1962:1962 VQC.Real <> r:41 var
+R1966:1966 VQC.Real <> r:41 var
+ax 1979:1987 OurR Rmult_1_l
+R2002:2002 VQC.Real OurR R defax
+binder 1998:1998 <> r:43
+R2010:2012 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2006:2008 VQC.Real OurR ::R_scope:x_'*'_x not
+R2009:2009 VQC.Real <> r:43 var
+R2013:2013 VQC.Real <> r:43 var
+ax 2022:2039 OurR Rmult_plus_distr_l
+R2061:2061 VQC.Real OurR R defax
+binder 2050:2051 <> r1:45
+binder 2053:2054 <> r2:46
+binder 2056:2057 <> r3:47
+R2078:2080 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2066:2069 VQC.Real OurR ::R_scope:x_'*'_x not
+R2077:2077 VQC.Real OurR ::R_scope:x_'*'_x not
+R2064:2065 VQC.Real <> r1:45 var
+R2072:2074 VQC.Real OurR ::R_scope:x_'+'_x not
+R2070:2071 VQC.Real <> r2:46 var
+R2075:2076 VQC.Real <> r3:47 var
+R2088:2090 VQC.Real OurR ::R_scope:x_'+'_x not
+R2083:2085 VQC.Real OurR ::R_scope:x_'*'_x not
+R2081:2082 VQC.Real <> r1:45 var
+R2086:2087 VQC.Real <> r2:46 var
+R2093:2095 VQC.Real OurR ::R_scope:x_'*'_x not
+R2091:2092 VQC.Real <> r1:45 var
+R2096:2097 VQC.Real <> r3:47 var
+prf 2107:2115 OurR Rmult_0_r
+binder 2126:2126 <> r:49
+R2134:2136 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2130:2132 VQC.Real OurR ::R_scope:x_'*'_x not
+R2129:2129 VQC.Real <> r:49 var
+R2166:2174 VQC.Real OurR R0_unique thm
+R2178:2180 VQC.Real OurR ::R_scope:x_'*'_x not
+R2166:2174 VQC.Real OurR R0_unique thm
+R2178:2180 VQC.Real OurR ::R_scope:x_'*'_x not
+R2197:2214 VQC.Real OurR Rmult_plus_distr_l prfax
+R2197:2214 VQC.Real OurR Rmult_plus_distr_l prfax
+R2197:2214 VQC.Real OurR Rmult_plus_distr_l prfax
+R2225:2233 VQC.Real OurR Rplus_0_l prfax
+R2225:2233 VQC.Real OurR Rplus_0_l prfax
+R2225:2233 VQC.Real OurR Rplus_0_l prfax
+prf 2254:2271 OurR Rmult_plus_distr_r
+R2293:2293 VQC.Real OurR R defax
+binder 2282:2283 <> r1:50
+binder 2285:2286 <> r2:51
+binder 2288:2289 <> r3:52
+R2310:2312 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2296:2296 VQC.Real OurR ::R_scope:x_'*'_x not
+R2304:2307 VQC.Real OurR ::R_scope:x_'*'_x not
+R2299:2301 VQC.Real OurR ::R_scope:x_'+'_x not
+R2297:2298 VQC.Real <> r1:50 var
+R2302:2303 VQC.Real <> r2:51 var
+R2308:2309 VQC.Real <> r3:52 var
+R2320:2322 VQC.Real OurR ::R_scope:x_'+'_x not
+R2315:2317 VQC.Real OurR ::R_scope:x_'*'_x not
+R2313:2314 VQC.Real <> r1:50 var
+R2318:2319 VQC.Real <> r3:52 var
+R2325:2327 VQC.Real OurR ::R_scope:x_'*'_x not
+R2323:2324 VQC.Real <> r2:51 var
+R2328:2329 VQC.Real <> r3:52 var
+R2357:2366 VQC.Real OurR Rmult_comm prfax
+R2357:2366 VQC.Real OurR Rmult_comm prfax
+R2357:2366 VQC.Real OurR Rmult_comm prfax
+R2377:2394 VQC.Real OurR Rmult_plus_distr_l prfax
+R2377:2394 VQC.Real OurR Rmult_plus_distr_l prfax
+R2377:2394 VQC.Real OurR Rmult_plus_distr_l prfax
+R2408:2417 VQC.Real OurR Rmult_comm prfax
+R2408:2417 VQC.Real OurR Rmult_comm prfax
+R2408:2417 VQC.Real OurR Rmult_comm prfax
+R2408:2417 VQC.Real OurR Rmult_comm prfax
+prf 2442:2447 OurR Rinv_r
+R2462:2462 VQC.Real OurR R defax
+binder 2458:2458 <> r:53
+R2471:2474 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2466:2469 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2465:2465 VQC.Real <> r:53 var
+R2482:2484 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2476:2478 VQC.Real OurR ::R_scope:x_'*'_x not
+R2475:2475 VQC.Real <> r:53 var
+R2479:2480 VQC.Real OurR ::R_scope:'/'_x not
+R2481:2481 VQC.Real <> r:53 var
+R2513:2522 VQC.Real OurR Rmult_comm prfax
+R2513:2522 VQC.Real OurR Rmult_comm prfax
+R2513:2522 VQC.Real OurR Rmult_comm prfax
+R2531:2536 VQC.Real OurR Rinv_l prfax
+R2531:2536 VQC.Real OurR Rinv_l prfax
+R2588:2591 Coq.setoid_ring.Ring <> <> mod
+R2601:2605 Coq.setoid_ring.Field <> <> mod
+prf 2615:2627 OurR R_Ring_Theory
+R2631:2641 Coq.setoid_ring.Ring_theory <> ring_theory rec
+R2673:2674 Coq.Init.Logic <> eq ind
+R2668:2671 VQC.Real OurR Ropp defax
+R2661:2666 VQC.Real OurR Rminus def
+R2655:2659 VQC.Real OurR Rmult defax
+R2649:2653 VQC.Real OurR Rplus defax
+R2646:2647 VQC.Real OurR R1 defax
+R2643:2644 VQC.Real OurR R0 defax
+R2707:2715 VQC.Real OurR Rplus_0_l prfax
+R2707:2715 VQC.Real OurR Rplus_0_l prfax
+R2726:2735 VQC.Real OurR Rplus_comm prfax
+R2726:2735 VQC.Real OurR Rplus_comm prfax
+R2756:2766 VQC.Real OurR Rplus_assoc prfax
+R2756:2766 VQC.Real OurR Rplus_assoc prfax
+R2756:2766 VQC.Real OurR Rplus_assoc prfax
+R2783:2791 VQC.Real OurR Rmult_1_l prfax
+R2783:2791 VQC.Real OurR Rmult_1_l prfax
+R2802:2811 VQC.Real OurR Rmult_comm prfax
+R2802:2811 VQC.Real OurR Rmult_comm prfax
+R2832:2842 VQC.Real OurR Rmult_assoc prfax
+R2832:2842 VQC.Real OurR Rmult_assoc prfax
+R2832:2842 VQC.Real OurR Rmult_assoc prfax
+R2859:2876 VQC.Real OurR Rmult_plus_distr_r thm
+R2859:2876 VQC.Real OurR Rmult_plus_distr_r thm
+R2895:2905 VQC.Real OurR Rplus_opp_r prfax
+R2895:2905 VQC.Real OurR Rplus_opp_r prfax
+R2935:2947 VQC.Real OurR R_Ring_Theory thm
+prf 2957:2970 OurR R_Field_Theory
+R2974:2985 Coq.setoid_ring.Field_theory <> field_theory rec
+R3027:3028 Coq.Init.Logic <> eq ind
+R3022:3025 VQC.Real OurR Rinv defax
+R3017:3020 VQC.Real OurR Rdiv def
+R3012:3015 VQC.Real OurR Ropp defax
+R3005:3010 VQC.Real OurR Rminus def
+R2999:3003 VQC.Real OurR Rmult defax
+R2993:2997 VQC.Real OurR Rplus defax
+R2990:2991 VQC.Real OurR R1 defax
+R2987:2988 VQC.Real OurR R0 defax
+R3061:3073 VQC.Real OurR R_Ring_Theory thm
+R3061:3073 VQC.Real OurR R_Ring_Theory thm
+R3084:3092 VQC.Real OurR R1_neq_R0 prfax
+R3084:3092 VQC.Real OurR R1_neq_R0 prfax
+R3111:3116 VQC.Real OurR Rinv_l prfax
+R3111:3116 VQC.Real OurR Rinv_l prfax
+R3148:3161 VQC.Real OurR R_Field_Theory thm
+def 3173:3182 OurR ring_test1
+R3197:3197 VQC.Real OurR R defax
+binder 3193:3193 <> x:54
+R3205:3207 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3201:3203 VQC.Real OurR ::R_scope:x_'+'_x not
+R3200:3200 VQC.Real <> x:54 var
+R3204:3204 VQC.Real <> x:54 var
+R3209:3211 VQC.Real OurR ::R_scope:x_'*'_x not
+R3212:3212 VQC.Real <> x:54 var
+def 3259:3268 OurR ring_test2
+R3286:3286 VQC.Real OurR R defax
+binder 3279:3279 <> x:55
+binder 3281:3281 <> y:56
+binder 3283:3283 <> z:57
+R3298:3300 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3294:3296 VQC.Real OurR ::R_scope:x_'+'_x not
+R3290:3292 VQC.Real OurR ::R_scope:x_'*'_x not
+R3289:3289 VQC.Real <> x:55 var
+R3293:3293 VQC.Real <> y:56 var
+R3297:3297 VQC.Real <> z:57 var
+R3302:3304 VQC.Real OurR ::R_scope:x_'+'_x not
+R3301:3301 VQC.Real <> z:57 var
+R3306:3308 VQC.Real OurR ::R_scope:x_'*'_x not
+R3305:3305 VQC.Real <> y:56 var
+R3309:3309 VQC.Real <> x:55 var
+def 3349:3359 OurR field_test1
+R3376:3376 VQC.Real OurR R defax
+binder 3370:3370 <> x:58
+binder 3372:3372 <> y:59
+R3385:3388 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3380:3383 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3379:3379 VQC.Real <> x:58 var
+R3398:3400 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3394:3396 VQC.Real OurR ::R_scope:x_'/'_x not
+R3390:3392 VQC.Real OurR ::R_scope:x_'*'_x not
+R3389:3389 VQC.Real <> x:58 var
+R3393:3393 VQC.Real <> y:59 var
+R3397:3397 VQC.Real <> x:58 var
+R3401:3401 VQC.Real <> y:59 var
+ax 3466:3468 OurR Rlt
+R3473:3476 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3472:3472 VQC.Real OurR R defax
+R3478:3481 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3477:3477 VQC.Real OurR R defax
+R3502:3504 VQC.Real OurR Rlt defax
+not 3495:3495 OurR ::R_scope:x_'<'_x
+def 3529:3531 OurR Rgt
+R3542:3542 VQC.Real OurR R defax
+binder 3534:3535 <> r1:61
+binder 3537:3538 <> r2:62
+R3557:3559 VQC.Real OurR ::R_scope:x_'<'_x not
+R3555:3556 VQC.Real <> r2:62 var
+R3560:3561 VQC.Real <> r1:61 var
+def 3575:3577 OurR Rle
+R3588:3588 VQC.Real OurR R defax
+binder 3580:3581 <> r1:63
+binder 3583:3584 <> r2:64
+R3608:3611 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R3603:3605 VQC.Real OurR ::R_scope:x_'<'_x not
+R3601:3602 VQC.Real <> r1:63 var
+R3606:3607 VQC.Real <> r2:64 var
+R3614:3616 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3612:3613 VQC.Real <> r1:63 var
+R3617:3618 VQC.Real <> r2:64 var
+def 3632:3634 OurR Rge
+R3645:3645 VQC.Real OurR R defax
+binder 3637:3638 <> r1:65
+binder 3640:3641 <> r2:66
+R3667:3670 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R3658:3660 VQC.Real OurR Rgt def
+R3662:3663 VQC.Real <> r1:65 var
+R3665:3666 VQC.Real <> r2:66 var
+R3673:3675 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3671:3672 VQC.Real <> r1:65 var
+R3676:3677 VQC.Real <> r2:66 var
+R3695:3697 VQC.Real OurR Rle def
+not 3687:3687 OurR ::R_scope:x_'<='_x
+R3724:3726 VQC.Real OurR Rge def
+not 3716:3716 OurR ::R_scope:x_'>='_x
+R3752:3754 VQC.Real OurR Rgt def
+not 3745:3745 OurR ::R_scope:x_'>'_x
+ax 3774:3786 OurR total_order_T
+R3805:3805 VQC.Real OurR R defax
+binder 3797:3798 <> r1:67
+binder 3800:3801 <> r2:68
+R3829:3832 Coq.Init.Specif <> ::type_scope:x_'+'_'{'_x_'}' not
+R3840:3840 Coq.Init.Specif <> ::type_scope:x_'+'_'{'_x_'}' not
+R3808:3808 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R3816:3820 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R3828:3828 Coq.Init.Specif <> ::type_scope:'{'_x_'}'_'+'_'{'_x_'}' not
+R3811:3813 VQC.Real OurR ::R_scope:x_'<'_x not
+R3809:3810 VQC.Real <> r1:67 var
+R3814:3815 VQC.Real <> r2:68 var
+R3823:3825 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3821:3822 VQC.Real <> r1:67 var
+R3826:3827 VQC.Real <> r2:68 var
+R3835:3837 VQC.Real OurR ::R_scope:x_'>'_x not
+R3833:3834 VQC.Real <> r1:67 var
+R3838:3839 VQC.Real <> r2:68 var
+ax 3849:3856 OurR Rlt_asym
+R3875:3875 VQC.Real OurR R defax
+binder 3867:3868 <> r1:70
+binder 3870:3871 <> r2:71
+R3885:3888 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3880:3882 VQC.Real OurR ::R_scope:x_'<'_x not
+R3878:3879 VQC.Real <> r1:70 var
+R3883:3884 VQC.Real <> r2:71 var
+R3889:3891 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3899:3899 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3894:3896 VQC.Real OurR ::R_scope:x_'<'_x not
+R3892:3893 VQC.Real <> r2:71 var
+R3897:3898 VQC.Real <> r1:70 var
+ax 3908:3916 OurR Rlt_trans
+R3938:3938 VQC.Real OurR R defax
+binder 3927:3928 <> r1:73
+binder 3930:3931 <> r2:74
+binder 3933:3934 <> r3:75
+R3948:3951 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3943:3945 VQC.Real OurR ::R_scope:x_'<'_x not
+R3941:3942 VQC.Real <> r1:73 var
+R3946:3947 VQC.Real <> r2:74 var
+R3959:3962 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3954:3956 VQC.Real OurR ::R_scope:x_'<'_x not
+R3952:3953 VQC.Real <> r2:74 var
+R3957:3958 VQC.Real <> r3:75 var
+R3965:3967 VQC.Real OurR ::R_scope:x_'<'_x not
+R3963:3964 VQC.Real <> r1:73 var
+R3968:3969 VQC.Real <> r3:75 var
+ax 3978:3995 OurR Rplus_lt_compact_l
+R4016:4016 VQC.Real OurR R defax
+binder 4006:4006 <> r:77
+binder 4008:4009 <> r1:78
+binder 4011:4012 <> r2:79
+R4026:4029 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4021:4023 VQC.Real OurR ::R_scope:x_'<'_x not
+R4019:4020 VQC.Real <> r1:78 var
+R4024:4025 VQC.Real <> r2:79 var
+R4036:4038 VQC.Real OurR ::R_scope:x_'<'_x not
+R4031:4033 VQC.Real OurR ::R_scope:x_'+'_x not
+R4030:4030 VQC.Real <> r:77 var
+R4034:4035 VQC.Real <> r1:78 var
+R4040:4042 VQC.Real OurR ::R_scope:x_'+'_x not
+R4039:4039 VQC.Real <> r:77 var
+R4043:4044 VQC.Real <> r2:79 var
+ax 4053:4070 OurR Rmult_lt_compact_l
+R4091:4091 VQC.Real OurR R defax
+binder 4081:4081 <> r:81
+binder 4083:4084 <> r1:82
+binder 4086:4087 <> r2:83
+R4099:4102 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4095:4097 VQC.Real OurR ::R_scope:x_'<'_x not
+R4098:4098 VQC.Real <> r:81 var
+R4110:4113 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4105:4107 VQC.Real OurR ::R_scope:x_'<'_x not
+R4103:4104 VQC.Real <> r1:82 var
+R4108:4109 VQC.Real <> r2:83 var
+R4120:4122 VQC.Real OurR ::R_scope:x_'<'_x not
+R4115:4117 VQC.Real OurR ::R_scope:x_'*'_x not
+R4114:4114 VQC.Real <> r:81 var
+R4118:4119 VQC.Real <> r1:82 var
+R4124:4126 VQC.Real OurR ::R_scope:x_'*'_x not
+R4123:4123 VQC.Real <> r:81 var
+R4127:4128 VQC.Real <> r2:83 var
+def 4253:4266 OurR is_upper_bound
+R4274:4277 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4273:4273 VQC.Real OurR R defax
+binder 4269:4269 <> E:85
+R4289:4289 VQC.Real OurR R defax
+binder 4285:4285 <> m:86
+R4306:4306 VQC.Real OurR R defax
+binder 4302:4302 <> x:87
+R4312:4315 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4309:4309 VQC.Real <> E:85 var
+R4311:4311 VQC.Real <> x:87 var
+R4317:4320 VQC.Real OurR ::R_scope:x_'<='_x not
+R4316:4316 VQC.Real <> x:87 var
+R4321:4321 VQC.Real <> m:86 var
+def 4336:4340 OurR bound
+R4348:4351 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4347:4347 VQC.Real OurR R defax
+binder 4343:4343 <> E:88
+R4361:4367 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4373:4374 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4372:4372 VQC.Real OurR R defax
+binder 4368:4368 <> m:89
+R4375:4388 VQC.Real OurR is_upper_bound def
+R4390:4390 VQC.Real <> E:88 var
+R4392:4392 VQC.Real <> m:89 var
+def 4407:4412 OurR is_lub
+R4420:4423 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4419:4419 VQC.Real OurR R defax
+binder 4415:4415 <> E:90
+R4435:4435 VQC.Real OurR R defax
+binder 4431:4431 <> m:91
+R4461:4465 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4508:4508 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4443:4456 VQC.Real OurR is_upper_bound def
+R4458:4458 VQC.Real <> E:90 var
+R4460:4460 VQC.Real <> m:91 var
+R4477:4477 VQC.Real OurR R defax
+binder 4473:4473 <> b:92
+R4498:4501 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4480:4493 VQC.Real OurR is_upper_bound def
+R4495:4495 VQC.Real <> E:90 var
+R4497:4497 VQC.Real <> b:92 var
+R4503:4506 VQC.Real OurR ::R_scope:x_'<='_x not
+R4502:4502 VQC.Real <> m:91 var
+R4507:4507 VQC.Real <> b:92 var
+ax 4518:4529 OurR completeness
+R4546:4549 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4545:4545 VQC.Real OurR R defax
+binder 4541:4541 <> E:93
+R4564:4567 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4557:4561 VQC.Real OurR bound def
+R4563:4563 VQC.Real <> E:93 var
+R4568:4568 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4586:4590 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4569:4575 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4581:4582 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4580:4580 VQC.Real OurR R defax
+binder 4576:4576 <> x:94
+R4583:4583 VQC.Real <> E:93 var
+R4585:4585 VQC.Real <> x:94 var
+R4591:4592 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'|'_x_'}' not
+R4594:4596 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'|'_x_'}' not
+R4598:4600 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'|'_x_'}' not
+R4611:4612 Coq.Init.Specif <> ::type_scope:'{'_x_':'_x_'|'_x_'}' not
+R4597:4597 VQC.Real OurR R defax
+binder 4593:4593 <> m:95
+R4601:4606 VQC.Real OurR is_lub def
+R4608:4608 VQC.Real <> E:93 var
+R4610:4610 VQC.Real <> m:95 var
+ax 4621:4633 OurR completeness'
+R4650:4653 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4649:4649 VQC.Real OurR R defax
+binder 4645:4645 <> E:97
+R4668:4671 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4661:4665 VQC.Real OurR bound def
+R4667:4667 VQC.Real <> E:97 var
+R4672:4672 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4690:4695 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4728:4728 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4673:4679 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4685:4686 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4684:4684 VQC.Real OurR R defax
+binder 4680:4680 <> x:98
+R4687:4687 VQC.Real <> E:97 var
+R4689:4689 VQC.Real <> x:98 var
+R4696:4698 Coq.Init.Specif <> sig ind
+binder 4712:4712 <> m:99
+R4717:4722 VQC.Real OurR is_lub def
+R4724:4724 VQC.Real <> E:97 var
+R4726:4726 VQC.Real <> m:99 var
+R4704:4704 VQC.Real OurR R defax
+prf 4773:4779 OurR Rlt_0_1
+R4784:4786 VQC.Real OurR ::R_scope:x_'<'_x not
+def 4812:4819 OurR lt_sqrt2
+R4826:4826 VQC.Real OurR R defax
+binder 4822:4822 <> x:101
+R4837:4839 VQC.Real OurR ::R_scope:x_'<'_x not
+R4833:4835 VQC.Real OurR ::R_scope:x_'*'_x not
+R4832:4832 VQC.Real <> x:101 var
+R4836:4836 VQC.Real <> x:101 var
+prf 4850:4869 OurR upper_bound_2_sqrt_2
+R4873:4886 VQC.Real OurR is_upper_bound def
+R4888:4895 VQC.Real OurR lt_sqrt2 def
+R4916:4929 VQC.Real OurR is_upper_bound def
+R4932:4939 VQC.Real OurR lt_sqrt2 def
+R4977:4989 VQC.Real OurR total_order_T prfax
+R4977:4989 VQC.Real OurR total_order_T prfax
+R5030:5038 VQC.Real OurR Rplus_0_r thm
+R5030:5038 VQC.Real OurR Rplus_0_r thm
+R5030:5038 VQC.Real OurR Rplus_0_r thm
+R5055:5063 VQC.Real OurR Rlt_trans prfax
+R5055:5063 VQC.Real OurR Rlt_trans prfax
+R5072:5089 VQC.Real OurR Rplus_lt_compact_l prfax
+R5072:5089 VQC.Real OurR Rplus_lt_compact_l prfax
+R5102:5108 VQC.Real OurR Rlt_0_1 prfax
+R5102:5108 VQC.Real OurR Rlt_0_1 prfax
+R5119:5128 VQC.Real OurR Rplus_comm prfax
+R5119:5128 VQC.Real OurR Rplus_comm prfax
+R5119:5128 VQC.Real OurR Rplus_comm prfax
+R5137:5154 VQC.Real OurR Rplus_lt_compact_l prfax
+R5137:5154 VQC.Real OurR Rplus_lt_compact_l prfax
+R5190:5198 VQC.Real OurR Rplus_0_r thm
+R5190:5198 VQC.Real OurR Rplus_0_r thm
+R5190:5198 VQC.Real OurR Rplus_0_r thm
+R5210:5227 VQC.Real OurR Rplus_lt_compact_l prfax
+R5210:5227 VQC.Real OurR Rplus_lt_compact_l prfax
+R5240:5246 VQC.Real OurR Rlt_0_1 prfax
+R5240:5246 VQC.Real OurR Rlt_0_1 prfax
+R5266:5268 VQC.Real OurR ::R_scope:x_'<'_x not
+R5262:5264 VQC.Real OurR ::R_scope:x_'*'_x not
+R5270:5272 VQC.Real OurR ::R_scope:x_'*'_x not
+R5266:5268 VQC.Real OurR ::R_scope:x_'<'_x not
+R5262:5264 VQC.Real OurR ::R_scope:x_'*'_x not
+R5270:5272 VQC.Real OurR ::R_scope:x_'*'_x not
+R5283:5300 VQC.Real OurR Rmult_lt_compact_l prfax
+R5283:5300 VQC.Real OurR Rmult_lt_compact_l prfax
+R5310:5318 VQC.Real OurR Rlt_trans prfax
+R5310:5318 VQC.Real OurR Rlt_trans prfax
+R5331:5337 VQC.Real OurR Rlt_0_1 prfax
+R5331:5337 VQC.Real OurR Rlt_0_1 prfax
+R5366:5375 VQC.Real OurR Rmult_comm prfax
+R5378:5386 VQC.Real OurR Rmult_1_l prfax
+R5366:5375 VQC.Real OurR Rmult_comm prfax
+R5366:5375 VQC.Real OurR Rmult_comm prfax
+R5378:5386 VQC.Real OurR Rmult_1_l prfax
+R5378:5386 VQC.Real OurR Rmult_1_l prfax
+R5406:5414 VQC.Real OurR Rlt_trans prfax
+R5406:5414 VQC.Real OurR Rlt_trans prfax
+prf 5448:5458 OurR bound_sqrt2
+R5462:5466 VQC.Real OurR bound def
+R5468:5475 VQC.Real OurR lt_sqrt2 def
+R5501:5520 VQC.Real OurR upper_bound_2_sqrt_2 thm
+R5501:5520 VQC.Real OurR upper_bound_2_sqrt_2 thm
+prf 5535:5545 OurR ex_lt_sqrt2
+R5549:5555 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R5557:5558 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 5556:5556 <> x:102
+R5559:5566 VQC.Real OurR lt_sqrt2 def
+R5568:5568 VQC.Real <> x:102 var
+R5597:5604 VQC.Real OurR lt_sqrt2 def
+R5615:5623 VQC.Real OurR Rmult_1_l prfax
+R5615:5623 VQC.Real OurR Rmult_1_l prfax
+R5615:5623 VQC.Real OurR Rmult_1_l prfax
+R5640:5648 VQC.Real OurR Rplus_0_r thm
+R5640:5648 VQC.Real OurR Rplus_0_r thm
+R5640:5648 VQC.Real OurR Rplus_0_r thm
+R5667:5684 VQC.Real OurR Rplus_lt_compact_l prfax
+R5667:5684 VQC.Real OurR Rplus_lt_compact_l prfax
+R5695:5701 VQC.Real OurR Rlt_0_1 prfax
+R5695:5701 VQC.Real OurR Rlt_0_1 prfax
+def 5721:5725 OurR sqrt2
+R5730:5741 VQC.Real OurR completeness prfax
+R5743:5750 VQC.Real OurR lt_sqrt2 def
+R5752:5762 VQC.Real OurR bound_sqrt2 thm
+R5764:5774 VQC.Real OurR ex_lt_sqrt2 thm
+R5782:5785 VQC.Real OurR <> mod
