@@ -1,5 +1,8 @@
--- Roughly following the POPL08 tutorial but in Lean 4
+-- STLC + locally nameless with cofinite quantification
+
+-- Roughly following the following materials:
 -- https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc/STLC_Tutorial.html
+-- https://github.com/ElifUskuplu/Stlc_deBruijn
 
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Sort
@@ -28,14 +31,12 @@ example :
 
 @[simp]
 def fv : (t: tm) -> Finset ℕ
-| .bvar i => {}
+| .bvar _ => {}
 | .fvar i => {i}
 | .abs t => fv t
 | .app t₁ t₂ => fv t₁ ∪ fv t₂
 
 example : fv (.abs (.app (.bvar 0) (.fvar 0))) = {0} := by simp
-
-def my_set : Finset ℕ := {1, 2, 3, 4}
 
 lemma substFresh (src : ℕ) (tgt : tm) (t: tm) (h : src ∉ fv t) :
   substF src tgt t = t := by
@@ -154,5 +155,138 @@ lemma substLc : ∀ (x : ℕ) u e, lc e → lc u → lc (substF x u e) := by
     simp; by_cases h: (y = x)
     . rw [h]; simp; assumption
     . rw [if_neg h]; constructor
-  case lc_abs x t h ih => sorry
+  case lc_abs L t h ih =>
+    simp; apply (lc.lc_abs (L ∪ {x}))
+    intro y hy; simp at hy; push_neg at hy; rw [substOpenVar];
+    apply ih; exact hy.left; assumption; exact hy.right; assumption
   case lc_app t1 t2 ht1 ht2 => simp; constructor; apply ht1; assumption; apply ht2; assumption
+
+abbrev ctx := List (ℕ × ty)
+
+-- @[simp] def dom (ρ : ctx) : Finset ℕ := ρ.map Prod.fst |>.toFinset
+-- #eval dom [(0, .unit), (1, .arrow .unit .unit)]
+
+@[simp]
+def get (x : ℕ) : ctx → Option ty
+| [] => none
+| (y , S) :: Γ' => if x = y then some S else get x Γ'
+
+@[simp]
+def dom : ctx → (Finset ℕ)
+| [] => ∅
+| ((x, _) :: Γ') => {x} ∪ (dom Γ')
+
+@[simp]
+def binds x T (Γ : ctx) := (get x Γ = some T)
+
+@[simp]
+def inCtx (x : ℕ) : ctx → Prop
+| [] => False
+| (y, _) :: Γ' => x = y ∨ inCtx x Γ'
+
+lemma memDomIffInCtx(a : ℕ) (Γ : ctx) : a ∈ dom Γ ↔ inCtx a Γ := by
+  induction Γ
+  case nil => simp [Finset.not_mem_empty]
+  case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
+
+inductive ctxOk : ctx → Prop
+| ctxOK_mt : ctxOk []
+| ctxOK_cs : ∀ Γ x τ,
+  ctxOk Γ → (¬ inCtx x Γ) → ctxOk ((x, τ) :: Γ)
+
+lemma bindsInCtx (x : ℕ) (τ : ty) (Γ : ctx) :
+  binds x τ Γ → inCtx x Γ := by
+  intro h; induction Γ <;> simp at h
+  case cons hd tl ih =>
+  by_cases heq: (x = hd.1)
+  . simp [heq];
+  . simp [heq]; apply ih; rw [if_neg heq] at h; assumption
+
+lemma inCtxBinds (x : ℕ) (Γ : ctx) :
+  inCtx x Γ → exists (τ : ty), binds x τ Γ := by
+  intro h; induction Γ <;> simp at h
+  case cons hd tl ih =>
+    by_cases heq: (x = hd.1)
+    . simp [heq];
+    . simp [heq]; apply Or.elim h <;> intro h
+      . contradiction
+      . apply ih h
+
+lemma bindsConcatOk x τ (Γ₁ Γ₂ : ctx) :
+  binds x τ Γ₁ -> ctxOk (Γ₂ ++ Γ₁) -> binds x τ (Γ₂ ++ Γ₁) := by
+  induction Γ₂
+  case nil => simp; intros; assumption
+  case cons b Γ' ih =>
+    intro hbd H; cases H
+    next y τ' hctx g =>
+      simp at hctx
+      by_cases hxy : x = y
+      . simp [if_pos hxy]
+        by_contra; apply g
+        apply bindsInCtx y τ (Γ' ++ Γ₁)
+        rw [← hxy]; apply ih <;> assumption
+      . simp [if_neg hxy]; apply ih <;> assumption
+
+lemma weakeningBind Γ₁ Γ₂ Γ₃ x τ:
+  binds x τ (Γ₁ ++ Γ₃) →
+  ctxOk (Γ₁ ++ Γ₂ ++ Γ₃) →
+  binds x τ (Γ₁ ++ Γ₂ ++ Γ₃) := by
+  intro hb hctx
+  induction Γ₁
+  case nil => simp at *; apply bindsConcatOk; assumption; assumption
+  case cons hd tl ih =>
+    simp; by_cases heq: (x = hd.1) <;> simp at hb;
+    . simp [heq]; simp [heq] at hb; assumption
+    . simp [if_neg heq]; simp at ih; apply ih;
+      simp [heq] at hb; assumption;
+      cases hctx; next hctx' _ => simp at hctx'; assumption;
+
+inductive hasType : ctx → tm → ty → Prop
+| t_var : ∀ Γ x τ, ctxOk Γ → binds x τ Γ → hasType Γ (.fvar x) τ
+| t_abs : ∀ (L : Finset ℕ) Γ t τ₁ τ₂,
+  (∀ (x: ℕ), x ∉ L → hasType ((x, τ₁)::Γ) (substB t (.fvar x)) τ₂) →
+  hasType Γ (.abs t) (ty.arrow τ₁ τ₂)
+| t_app : ∀ Γ t₁ t₂ τ₁ τ₂,
+  hasType Γ t₁ (.arrow τ₁ τ₂) →
+  hasType Γ t₂ τ₁ →
+  hasType Γ (.app t₁ t₂) τ₂
+
+-- weakening of typing
+
+lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : ctx) t τ,
+  hasType Γ' t τ →
+  (Γ₁ : ctx) → Γ' = Γ₁ ++ Γ₂ →
+  ctxOk (Γ₁ ++ Γ₃ ++ Γ₂) →
+  hasType (Γ₁ ++ Γ₃ ++ Γ₂) t τ := by
+  intro Γ' Γ₂ Γ₃ t τ hty
+  induction hty
+  case t_var Γ' x' τ' hctx bd =>
+    intros Γ₁ heq hctx'; constructor; assumption
+    apply weakeningBind; rw [heq] at bd; assumption; assumption
+  case t_abs L Γ t τ₁ τ₂ _ ih =>
+    intros Γ₁ heq hctx';
+    apply hasType.t_abs (L ∪ dom (Γ₁ ++ Γ₃ ++ Γ₂))
+    intro x hx; simp at hx
+    apply ih x hx.1 ((x, τ₁) :: Γ₁)
+    simp; assumption
+    simp; apply ctxOk.ctxOK_cs; rw [<- List.append_assoc]; assumption
+    intro hctx; exact (hx.2 ((memDomIffInCtx _ _).mpr hctx))
+  case t_app Γ t1 t2 τ1 τ2 ty1 ty2 ih1 ih2 =>
+    intros Γ₁ heq hctx; apply hasType.t_app
+    exact (ih1 Γ₁ heq hctx); exact (ih2 Γ₁ heq hctx)
+
+lemma weakening' : ∀ (Γ₁ Γ₂ Γ₃ : ctx) t τ,
+  hasType (Γ₁ ++ Γ₃) t τ →
+  ctxOk (Γ₁ ++ Γ₂ ++ Γ₃) →
+  hasType (Γ₁ ++ Γ₂ ++ Γ₃) t τ := by
+  intros Γ₁ Γ₂ Γ₃ t τ hty hctx
+  apply weakening''; assumption; rfl; assumption
+
+lemma weakening : ∀ Γ₁ Γ₂ t τ,
+  hasType Γ₂ t τ →
+  ctxOk (Γ₁ ++ Γ₂) →
+  hasType (Γ₁ ++ Γ₂) t τ := by
+  intro Γ₁ Γ₂ t τ hty hctx
+  rw [<- List.nil_append (Γ₁ ++ Γ₂)]
+  apply weakening' [] Γ₁ Γ₂ t τ hty
+  simp; assumption
