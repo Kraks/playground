@@ -437,6 +437,8 @@ lemma preservation Γ t t' τ :
     case st_app2 t2' st vt2 =>
       constructor; assumption; apply ih2; assumption
 
+-- progress
+
 lemma progress' Γ e τ : Γ = [] → hasType Γ e τ → value e ∨ ∃ e', step e e' := by
   intro hmt ht; induction ht;
   case t_var hbd => simp at hbd; rw [hmt] at hbd; simp at hbd
@@ -453,3 +455,5 @@ lemma progress' Γ e τ : Γ = [] → hasType Γ e τ → value e ∨ ∃ e', st
     . next st =>
       rcases st with ⟨t1', st⟩
       use (.app t1' t2); constructor; apply typingLc; assumption; assumption
+
+lemma progress e τ : hasType [] e τ → value e ∨ ∃ e', step e e' := by apply progress'; simp
