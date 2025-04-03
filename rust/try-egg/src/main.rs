@@ -1,4 +1,7 @@
+mod ring;
+
 use egg::{*, rewrite as rw};
+
 
 define_language! {
     pub enum MatExpr {
@@ -41,6 +44,25 @@ impl CostFunction<MatExpr> for MatCostFn {
     }
 }
 
+struct MinMultCostFn;
+impl CostFunction<MatExpr> for MinMultCostFn {
+    type Cost = usize;
+    fn cost<C>(&mut self, enode: &MatExpr, mut costs: C) -> Self::Cost
+    where
+        C: FnMut(Id) -> Self::Cost
+    {
+        use MatExpr::*;
+        let op_cost = match enode {
+            Mat(_) => 100000,
+            MatCl(_) => 100000,
+            MatTr(_) => 100000,
+            MatMul(_) => 1,
+            _ => 0
+        };
+        enode.fold(op_cost, |sum, id| sum + costs(id))
+    }
+}
+
 fn mat() {
     let rules: &[Rewrite<MatExpr, ()>] = &[
         rw!("commute-add"; "(+ ?x ?y)" => "(+ ?y ?x)"),
@@ -61,10 +83,6 @@ fn mat() {
             "(mat-cl (vec ?v1 ?v2) (vec ?v3 ?v4))" =>
             "(mat    (vec ?v1 ?v3) (vec ?v2 ?v4))"),
 
-        // if rhs is not a column-major matrix, transpose it
-        rw!("mat-mul-row";
-            "(m* (mat ?v1 ?v2) (mat    ?v3 ?v4))" =>
-            "(m* (mat ?v1 ?v2) (mat-cl ?v3 ?v4))"),
         // actual matrix mult happens on a row-major matrix and a column-major matrix
         rw!("mat-mul";
             "(m* (mat ?v1 ?v2) (mat-cl ?v3 ?v4))" =>
@@ -117,7 +135,7 @@ fn mat() {
     //              (vec (+ (* x3 y1) (* x4 y2)) (+ (* x3 y2) (* x4 y4))))
     let e1: RecExpr<MatExpr> = "(m* (mat (vec x1 x2) (vec x3 x4)) (mat-cl (vec y1 y2) (vec y2 y4)))".parse().unwrap();
     let runner = Runner::default().with_expr(&e1).run(rules);
-    let extractor = Extractor::new(&runner.egraph, MatCostFn);
+    let extractor = Extractor::new(&runner.egraph, MinMultCostFn);
     let (best_cost, best_expr) = extractor.find_best(runner.roots[0]);
     println!("best expression: {}", best_expr);
     }
@@ -144,8 +162,9 @@ fn simple() {
 }
 
 fn main() {
-    println!("Hello, Egg!");
-    //simple();
-    mat();
+  println!("Hello, Egg!");
+  //simple();
+  mat();
+  ring::ring();
 }
 
