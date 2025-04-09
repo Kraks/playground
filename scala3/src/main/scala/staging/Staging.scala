@@ -43,7 +43,23 @@ def specPower(n: Int): Double => Double = staging.run {
   stagedPower
 }
 
+def dup(using Quotes): Expr[Int] = {
+  def plus(x: Expr[Int])(using Quotes): Expr[Int] = {
+    '{ $x + $x }
+  }
+  val y = plus( '{ println("hello"); 3} )
+  println(y.show)
+  y
+}
+
 @main def main: Unit = {
   val pow3 = specPower(3)
   println(pow3(3))
+
+  // code/effect duplication
+  {
+    val y = staging.run { dup }
+    println(y)
+  }
+
 }

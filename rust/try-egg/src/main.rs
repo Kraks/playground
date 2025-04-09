@@ -2,7 +2,6 @@ mod ring;
 
 use egg::{*, rewrite as rw};
 
-
 define_language! {
     pub enum MatExpr {
         // data types
