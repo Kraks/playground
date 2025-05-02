@@ -54,7 +54,7 @@ object QuantumContSim {
       case CCX(x, y, z) if isSet(bs, x) && isSet(bs, y) => State(d, neg(bs, z))
       case CCX(x, y, z) => v
       case H(x) if isSet(bs, x) => collect(State(hscale * d, neg(bs, x)), State(-1.0 * hscale * d, bs))
-      case H(x) => collect(State(hscale * d, bs), State(hscale * d, neg(bs, x)))
+      case H(x) => collect(State(hscale * d, neg(bs, x)), State(hscale * d, bs))
     }
   }
 
