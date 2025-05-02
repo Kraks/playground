@@ -1,5 +1,6 @@
 package types.alacarte
 
+/*
 sealed trait Expr[F[_]]
 case class In[F[_]](t: F[Expr[F]]) extends Expr[F]
 
@@ -15,3 +16,4 @@ object Expr {
   type AddExpr = Expr[Add]
   def e: Expr[:+:[Val, Add, ?]] = In(Inl[Val, Add, Int](Val[Int](1)))
 }
+*/

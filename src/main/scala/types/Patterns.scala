@@ -1,4 +1,4 @@
-package types
+package types.pattern
 
 sealed trait Maybe[A]
 final case class Just[A](x: A) extends Maybe[A]
