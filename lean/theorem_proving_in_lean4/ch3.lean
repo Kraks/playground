@@ -89,7 +89,7 @@ theorem and_swap' : p ∧ q ↔ q ∧ p :=
 example (h : p ∧ q) : q ∧ p :=
   have hp : p := h.left
   have hq : q := h.right
-  show q ∧ p from And.intro hq hp
+  And.intro hq hp
 
 example (h : p ∧ q) : q ∧ p :=
   have hp : p := h.left
@@ -117,3 +117,27 @@ example (h : ¬¬p) : p :=
 
 example (h : ¬¬p) : p :=
   byContradiction (fun h1 : ¬p => show False from h h1)
+
+-- Exercises
+section
+  variable (p q r : Prop)
+  -- distributivity
+  example : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) :=
+    Iff.intro
+      (fun (h: p ∧ (q ∨ r)) =>
+        have hp := h.left
+        have hqr := h.right
+        Or.elim h.right
+          (fun hq => Or.inl ⟨hp, hq⟩)
+          (fun hr => Or.inr ⟨hp, hr⟩))
+      (fun h =>
+        Or.elim h
+        (fun hpq =>
+          have hp := hpq.left
+          have hq := hpq.right
+          And.intro hp (Or.inl hq))
+        (fun hpr =>
+          have hp := hpr.left
+          have hr := hpr.right
+          And.intro hp (Or.inr hr)))
+end
