@@ -12,7 +12,7 @@
 (define-type Label Symbol)
 (define-type Num Integer)
 (define-type Var Symbol)
-(define-type Op (U '+1 '-1 'even? 'odd?))
+(define-type Op (U '+1 '-1 'even? 'odd? 'zero?))
 
 ; Expressions
 (define-type Expr
@@ -37,8 +37,8 @@
 ;; Semantics
 
 (define-type Kon (U flat -->))
-(struct: flat ([v : Value] [l : Label] [p : Party]))
-(struct: --> ([c0 : Kon] [c1 : Kon]))
+(struct: flat ([v : Value] [l : Label] [p : Party]) #:transparent)
+(struct: --> ([c0 : Kon] [c1 : Kon]) #:transparent)
 
 (define-type Value (U Num Boolean Op clo arr))
 ; ordinary function value
@@ -99,6 +99,7 @@
        [(? blame? b) b]
        [(ret v1 σ1)
         (match (apply f v1 σ1)
+          [(? blame? b) b]
           [(ret v2 σ2)
            (monitor k2 v2 σ2)])])]
     [(clo (lam x e) ρ)
@@ -110,6 +111,9 @@
     ['-1
      (match v
        [(? number? n) (ret (- v 1) σ)])]
+    ['zero?
+     (match v
+       [(? number? n) (ret (eq? n 0) σ)])]
     ['even?
      (match v
        [(? number? n) (ret (even? n) σ)])]
@@ -230,10 +234,10 @@
         'f0)
    (num 3)))
 
-; Blame the result of application
+; Blame the result of application (v0:server)
 (eval-top
  (mon
-  (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+  (pred (prim 'odd?))
   ':server
   (app
    (mon (~> (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
@@ -243,3 +247,52 @@
         'f0)
    (num 3))
   'v0))
+
+; Sec 3.2 example from Dimoulas & Felleisen TOPLAS
+; Blame the server since
+
+(define serM
+  (lam 'f
+       (ite (app (prim 'zero?) (app (vbl 'f) (num 1)))
+            (vbl 'f)
+            (vbl 'f))))
+
+; Blame f0's client, since it doesn't provide a good (function) value to f0
+(eval-top
+ (app
+  (app
+   (mon (~> (~> (pred (prim 'odd?))
+                (pred (prim 'odd?)))
+            (~> (pred (lam 'x (bool #t)))
+                (pred (lam 'x (bool #t)))))
+        ':server
+        serM
+        'f0)
+   (lam 'y (app (prim '+1) (vbl 'y))))
+  (num 1)))
+
+; Blame f0 server
+(eval-top
+ (app
+  (app
+   (mon (~> (~> (pred (prim 'odd?))
+                (pred (prim 'odd?)))
+            (~> (pred (lam 'x (bool #t)))
+                (pred (lam 'x (bool #t)))))
+        ':server
+        serM
+        'f0)
+   (lam 'y (vbl 'y)))
+  (num 2))) ; Ok if the returned function is only applied with odd numbers
+
+; Observe that the returned function has two layers function contract
+(eval-top
+ (app
+   (mon (~> (~> (pred (prim 'odd?))
+                (pred (prim 'odd?)))
+            (~> (pred (lam 'x (bool #t)))
+                (pred (lam 'x (bool #t)))))
+        ':server
+        serM
+        'f0)
+   (lam 'y (vbl 'y))))
