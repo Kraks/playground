@@ -1,0 +1,13 @@
+(* pi.cm Build Project *)
+
+Library
+  structure Pi
+is
+  datatype.sml
+  pi.lex
+  pi.yacc:MLYacc
+  glue.sml
+  compiler.sml
+  $/basis.cm
+  $/ml-yacc-lib.cm
+  $smlnj/compiler/compiler.cm
