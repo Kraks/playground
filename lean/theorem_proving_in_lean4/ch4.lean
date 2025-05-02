@@ -99,14 +99,19 @@ section
   theorem T'' : a = e :=
     by rw [h1, h2, h3, Nat.add_comm, h4]
 
+  -- simp rewrite the goal using the rules by any order
   theorem T''' : a = e :=
-    by simp [h1, h2, h3, Nat.add_comm, h4]
+    by simp [h4, Nat.add_comm, h1, h2, h3]
 end
 
-example (a b c d : Nat) (h1 : a = b) (h2 : b ≤ c) (h3 : c + 1 < d) : a < d :=
+-- other forms of transitivity can use calculational style too
+example (a b c d : Nat)
+        (h1 : a = b)
+        (h2 : b ≤ c)
+        (h3 : c + 1 < d) : a < d :=
   calc
     a = b     := h1
-    _ < b + 1 := Nat.lt_succ_self b
+    _ < b + 1 := by simp [Nat.lt_succ_self]
     _ ≤ c + 1 := Nat.succ_le_succ h2
     _ < d     := h3
 
@@ -128,15 +133,15 @@ example (h1 : divides x y) (h2 : y = z) : divides x (2 * z) :=
   calc
     divides x y := h1
     _ = z := h2
-    divides _ (2 * z) := divides_mul ..
+    divides _ (2 * z) := divides_mul z 2 -- divides_mul ..
 
-infix:50 " ∣ " => divides
+infix:50 " // " => divides
 
 example (h₁ : divides x y) (h₂ : y = z) : divides x (2*z) :=
   calc
-    x ∣ y   := h₁
+    x // y   := h₁
     _ = z   := h₂
-    _ ∣ 2*z := divides_mul ..
+    _ // 2*z := divides_mul ..
 
 example (x y : Nat) : (x + y) * (x + y) = x * x + y * x + x * y + y * y :=
   calc
@@ -160,5 +165,82 @@ example (x : Nat) (h : x > 0) : ∃ y, y < x := Exists.intro 0 h
 example (x y z : Nat) (hxy : x < y) (hyz : y < z) : ∃ w, x < w ∧ w < z :=
   Exists.intro y (And.intro hxy hyz)
 
+-- use handy notation for introduction:
 example (x y z : Nat) (hxy : x < y) (hyz : y < z) : ∃ w, x < w ∧ w < z :=
   ⟨y, hxy, hyz⟩
+
+variable (α : Type) (p q : α → Prop)
+
+example (h : ∃ x, p x ∧ q x) : ∃ x, q x ∧ p x :=
+  Exists.elim h
+    (fun w => fun hw : p w ∧ q x =>
+      Exists.intro w (And.intro hw.right hw.left))
+
+-- use pattern matching to destruct an existential value
+example (h : ∃ x, p x ∧ q x) : ∃ x, q x ∧ p x :=
+  match h with
+  | ⟨w, hw⟩ => ⟨w, hw.right, hw.left⟩
+
+-- or unpack the nesting tuple directly:
+example (h : ∃ x, p x ∧ q x) : ∃ x, q x ∧ p x :=
+  match h with
+  | ⟨w, hpw, hqw⟩ => ⟨w, hqw, hpw⟩
+
+-- or use let-binding to unpack
+example (h : ∃ x, p x ∧ q x) : ∃ x, q x ∧ p x :=
+  let ⟨w, hpw, hqw⟩ := h
+  ⟨w, hqw, hpw⟩
+
+-- an implicit match introduced by fun
+example : (∃ x, p x ∧ q x) → ∃ x, q x ∧ p x :=
+  fun ⟨w, hpw, hqw⟩ => ⟨w, hqw, hpw⟩
+
+def is_even (a : Nat) := ∃ b, a = 2 * b
+
+theorem even_plus_even (h1 : is_even a) (h2 : is_even b) :
+  is_even (a + b) :=
+  match h1, h2 with
+  | ⟨k1, hk1⟩, ⟨k2, hk2⟩ => ⟨k1 + k2, by rw [hk1, hk2, Nat.mul_add]⟩
+
+-- In constructive logic, knowing that not every x satisfies ¬ p
+-- does not mean we have a particular x satisfying p.
+-- But in classical logic, this can be proved.
+section
+  open Classical
+  variable (p : α → Prop)
+  example (h : ¬ ∀ x, ¬ p x) : ∃ x, p x :=
+    byContradiction
+      (fun h1 =>
+        have h2 : ∀ x, ¬ p x :=
+          fun x =>
+          fun h3 : p x =>
+          have h4 : ∃ x, p x := ⟨x, h3⟩
+          show False from h1 h4
+        show False from h h2)
+end
+
+-- anonymous `have` and `this` keyword
+
+variable (f : Nat → Nat)
+variable (h : ∀ x : Nat, f x ≤ f (x + 1))
+
+example : f 0 ≤ f 3 :=
+  have : f 0 ≤ f 1 := h 0
+  have : f 0 ≤ f 2 := Nat.le_trans this (h 1)
+  show f 0 ≤ f 3 from Nat.le_trans this (h 2)
+
+-- `assumption` infers the term from the context
+
+example : f 0 ≤ f 3 :=
+  have : f 0 ≤ f 1 := h 0
+  have : f 0 ≤ f 2 := Nat.le_trans (by assumption) (h 1)
+  show f 0 ≤ f 3 from Nat.le_trans (by assumption) (h 2)
+
+-- explicit write the proposition/type to be inferred
+
+example : f 0 ≥ f 1 → f 1 ≥ f 2 → f 0 = f 2 :=
+  fun _ : f 0 ≥ f 1 =>
+  fun _ : f 1 ≥ f 2 =>
+  have : f 0 ≥ f 2 := Nat.le_trans ‹f 1 ≥ f 2› ‹f 0 ≥ f 1›
+  have : f 0 ≤ f 2 := Nat.le_trans (h 0) (h 1)
+  show f 0 = f 2 from Nat.le_antisymm this ‹f 0 ≥ f 2›
