@@ -167,8 +167,8 @@ lemma memDomIffInEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
   case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
 
 inductive envOk : env → Prop
-| ctxOK_mt : envOk []
-| ctxOK_cs : ∀ Γ x τ,
+| envOK_mt : envOk []
+| envOK_cs : ∀ Γ x τ,
   envOk Γ → (¬ inEnv x Γ) → envOk ((x, τ) :: Γ)
 
 lemma bindsInEnv (x : ℕ) (τ : ty) (Γ : env) :
@@ -299,7 +299,7 @@ lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : env) t τ,
     intro x hx; simp at hx
     apply ih x hx.1 ((x, τ₁) :: Γ₁)
     simp; assumption
-    simp; apply envOk.ctxOK_cs; rw [<- List.append_assoc]; assumption
+    simp; apply envOk.envOK_cs; rw [<- List.append_assoc]; assumption
     intro hctx; exact (hx.2 ((memDomIffInEnv _ _).mpr hctx))
   case t_app Γ t1 t2 τ1 τ2 ty1 ty2 ih1 ih2 =>
     intros Γ₁ heq hctx; apply hasType.t_app
@@ -385,13 +385,13 @@ inductive contract : tm → tm → Prop
 | beta : ∀ t1 t2,
   lc (.abs t1) → value t2 → contract (.app (.abs t1) t2) (substB t1 t2)
 
-inductive ctx' : (tm → tm) → Prop
-| ctx_appL : ∀ t2, ctx' (λ t => .app t t2)
-| ctx_appR : ∀ t1, ctx' (λ t => .app (.abs t1) t)
+inductive ctx : (tm → tm) → Prop
+| ctx_appL : ∀ t2, ctx (λ t => .app t t2)
+| ctx_appR : ∀ t1, ctx (λ t => .app (.abs t1) t)
 
 inductive evCtx : (tm → tm) → Prop
 | evCtx_nil : evCtx id
-| evCtx_cons : ∀ k1 k2, ctx' k1 -> evCtx k2 -> evCtx (k1 ∘ k2)
+| evCtx_cons : ∀ k1 k2, ctx k1 -> evCtx k2 -> evCtx (k1 ∘ k2)
 
 inductive step : tm → tm → Prop
 | red : ∀ k e1 e2, evCtx k -> contract e1 e2 -> step (k e1) (k e2)
@@ -417,7 +417,7 @@ lemma preservation Γ t t' τ :
 -- progress
 
 lemma ctxStep k e1 e2 :
-  ctx' k -> step e1 e2 -> step (k e1) (k e2) := by
+  ctx k -> step e1 e2 -> step (k e1) (k e2) := by
   intros hctx hs; rcases hs with ⟨k', e1', e2', _, _⟩
   apply step.red (fun x => k (k' x));
   constructor; repeat assumption
