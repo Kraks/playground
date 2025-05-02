@@ -52,7 +52,7 @@ fn mat() {
 
         // TODO: how to specify rules with variadic arguments?
         rw!("vec-dot-prod"; "(v* (vec ?a ?b) (vec ?c ?d))" => "(+ (* ?a ?c) (* ?b ?d))"),
-        rw!("vec-add",      "(v+ (vec ?a ?b) (vec ?c ?d))" => "(vec (+ ?a ?c) (+ ?b ?d))"),
+        rw!("vec-add";      "(v+ (vec ?a ?b) (vec ?c ?d))" => "(vec (+ ?a ?c) (+ ?b ?d))"),
 
         rw!("mat-transpose-1";
             "(mat    (vec ?v1 ?v2) (vec ?v3 ?v4))" =>
@@ -107,6 +107,19 @@ fn mat() {
     let (best_cost, best_expr) = extractor.find_best(runner.roots[0]);
     println!("best expression: {}", best_expr);
     assert_eq!(format!("{}", best_expr), "(mat (vec x2 (+ (* x1 y2) (* x2 y4))) (vec x4 (+ (* x3 y2) (* x4 y4))))");
+    }
+
+    {
+    // naive matrix mult
+    // x1 x2      y1 y2
+    // x3 x4      y2 y4
+    // expect: (mat (vec (+ (* x1 y1) (* x2 y2)) (+ (* x1 y2) (* x2 y4)))
+    //              (vec (+ (* x3 y1) (* x4 y2)) (+ (* x3 y2) (* x4 y4))))
+    let e1: RecExpr<MatExpr> = "(m* (mat (vec x1 x2) (vec x3 x4)) (mat-cl (vec y1 y2) (vec y2 y4)))".parse().unwrap();
+    let runner = Runner::default().with_expr(&e1).run(rules);
+    let extractor = Extractor::new(&runner.egraph, MatCostFn);
+    let (best_cost, best_expr) = extractor.find_best(runner.roots[0]);
+    println!("best expression: {}", best_expr);
     }
 
 }
