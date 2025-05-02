@@ -1,5 +1,6 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // A concrete interpreter
 
 import Expr._

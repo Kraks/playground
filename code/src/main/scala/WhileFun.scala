@@ -1,5 +1,6 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // A simple first-order functional language based on While
 
 enum Expr:

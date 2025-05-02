@@ -1,9 +1,10 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // The Interval abstract domain
 
 case class Interval private (lb: Double, ub: Double) {
-  def toConst: Option[Double] = if (lb == ub) Some(lb) else None
+  def toConst: Option[Int] = if (lb == ub) Some(lb.toInt) else None
 }
 
 object Interval {
@@ -13,6 +14,12 @@ object Interval {
   }
   def from(is: Int*): Interval = Interval(is.min.toDouble, is.max.toDouble)
 }
+
+given IntIntervalGC: GaloisConn[Set[Int], Interval] with
+  extension (a: Set[Int])
+    def α: Interval = Interval.from(a.toSeq:_*)
+  extension (b: Interval)
+    def γ: Set[Int] = (b.lb.toInt to b.ub.toInt).toSet
 
 given IntervalLattice(using ldb: Lattice[Double]): Lattice[Interval] with
   def bot = Interval.make(ldb.top, ldb.bot)

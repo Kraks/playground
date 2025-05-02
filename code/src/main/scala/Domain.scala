@@ -1,5 +1,6 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // Definitions of lattice and numerical abstract domain
 
 trait Lattice[T]:
@@ -9,6 +10,12 @@ trait Lattice[T]:
     def ⊑(l2: T): Boolean
     def ⊔(l2: T): T
     def ⊓(l2: T): T
+
+trait GaloisConn[A: Lattice, B: Lattice]:
+  extension (a: A)
+    def α: B
+  extension (b: B)
+    def γ: A
 
 trait AbsDomain[T: Lattice]:
   extension (l1: T)
@@ -101,3 +108,11 @@ given MapAbsDomain[K, V: Lattice : AbsDomain]: AbsDomain[Map[K, V]] with
       m2.foldLeft(m1) { case (m, (k, v)) => m + (k -> v ▽ m.getOrElse(k, lv.bot)) }
     def △(m2: Map[K, V]): Map[K, V] =
       m1.keySet.intersect(m2.keySet).foldLeft(Map[K,V]()) { case (m, k) => m + (k -> m1(k) △ m2(k)) }
+
+given SetLattice[T]: Lattice[Set[T]] with
+  def bot: Set[T] = Set[T]()
+  def top: Set[T] = throw new RuntimeException("No representation of top set")
+  extension (s1: Set[T])
+    def ⊑(s2: Set[T]) = s1.subsetOf(s2)
+    def ⊔(s2: Set[T]) = s1.union(s2)
+    def ⊓(s2: Set[T]) = s1.intersect(s2)

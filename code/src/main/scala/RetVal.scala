@@ -1,5 +1,6 @@
 package compositional
 
+// Author: Guannan Wei <guannanwei@purdue.edu>
 // An abstract domain to model return behavior with higher precision
 
 enum RetVal:
