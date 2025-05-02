@@ -1,3 +1,6 @@
+;; Author: Guannan Wei
+;; Derived from CS352/502 lecture notes
+
 (define (even x)
   (if (eq? x 0)
       1
