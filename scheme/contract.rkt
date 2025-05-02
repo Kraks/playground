@@ -8,13 +8,19 @@
 (define between-zero-and-ninety-nine?
   (λ (x) (and (>= x 0) (<= x 99))))
 
-(define/contract g
+(define/contract g1
+  (-> (-> greater-than-nine? between-zero-and-ninety-nine?) between-zero-and-ninety-nine?)
+  (λ (f) (f 0)))
+
+(define/contract g2
   (-> (-> greater-than-nine? between-zero-and-ninety-nine?) between-zero-and-ninety-nine?)
   (λ (f) (f 10)))
 
-;(g (λ (x) x))
+;(g1 (λ (x) x))
 
 ;(g (λ (x) (- 0 x)))
+
+;(g2 (λ (x) (- 0 x)))
 
 (define (blame s) (error 'contract "~a" s))
 
