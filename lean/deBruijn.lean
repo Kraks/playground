@@ -1,5 +1,10 @@
 -- https://lean-lang.org/lean4/doc/examples/deBruijn.lean.html
 
+import Lake
+
+#eval Lean.versionString
+#eval Lake.versionString
+
 -- Heterogeneous lists
 inductive HList {α : Type v} (β : α → Type u) : List α → Type (max u v)
 | nil : HList β []
