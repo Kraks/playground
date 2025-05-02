@@ -43,7 +43,7 @@ trait Futamura {
   /* A compiler-compiler, converting any interpreter to an equivalent compiler */
   def thirdProjection[A, B]: M[P[A => B] => M[A => M[B]]] =
     specializedSpecializerProgram(specializerProgram[A, B])
-  
+
   /* The fourth projection is a quine */
   def quine[A, B]: M[P[A => B] => M[A => M[B]]] =
     run(thirdProjection[P[A => B], A => M[B]])(specializerProgram[A, B])
@@ -84,9 +84,9 @@ trait FutamuraAlt1 {
 
   def first[A, B](prog: Rep[Rep[A => B]]): Rep[A => B] = mix(toRep(interp[A, B]))(prog)
   def mixmix[A, B]: Rep[Rep[A => B]] => Rep[Rep[A] => Rep[B]] = mix(toRep(mix))
-  def second[A, B]: Rep[Rep[Rep[A => B]] => Rep[A => B]] = mixmix(toRep(toRep(interp[A, B])))
+  def second[A, B](interp: Rep[A => B] => A => B): Rep[Rep[Rep[A => B]] => Rep[A => B]] = mixmix(toRep(toRep(interp)))
   def third[A, B]: Rep[Rep[Rep[A => B]] => Rep[Rep[A] => Rep[B]]] = mixmix(toRep(toRep(mix[A, B])))
-  def fourth[A, B]: Rep[Rep[Rep[A => B]] => Rep[Rep[A] => Rep[B]]] = 
+  def fourth[A, B]: Rep[Rep[Rep[A => B]] => Rep[Rep[A] => Rep[B]]] =
     unRep(third[Rep[A => B], Rep[A] => Rep[B]])(toRep(toRep(mix[A, B])))
 
   def self_interp[A, B](p: Rep[A => B]): A => B
@@ -100,7 +100,7 @@ trait FutamuraAlt2 {
 
   def mix[A, B]: Rep[A => B] => A => Rep[B]
   def interp[A, B]: Rep[A => B] => A => B
-  def first[A, B](prog: Rep[A => B]): Rep[A => B] = 
+  def first[A, B](prog: Rep[A => B]): Rep[A => B] =
     mix[Rep[A => B], A => B](toRep(interp[A, B]))(prog)
   def mixmix[A, B]: Rep[A => B] => Rep[A => Rep[B]] = mix(toRep(mix[A, B]))
   def second[A, B]: Rep[Rep[A => B] => Rep[A => B]] = mixmix(toRep(interp[A, B]))
