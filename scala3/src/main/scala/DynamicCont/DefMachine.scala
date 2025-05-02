@@ -59,7 +59,13 @@ def step(s: CState): State = s match {
   case CState(End(), v, γ) => MState(γ, v)
   case CState(Arg(e, ρ, κ), v, γ) => EState(e, ρ, Fun(v, κ), γ)
   case CState(Fun(Clo(x, e, ρ), κ), v, γ) => EState(e, ρ + (x -> v), κ, γ)
+  /* control captures a delimited continuation κ1, the current continuation κ2
+   * can be accessed from κ1 by using another control.
+   */
   case CState(Fun(DCont(κ1), κ2), v, γ) => CState(κ1 ★ κ2, v, γ)
+  /* shift captures a delimited continuation κ1, the current continuation κ2
+   * cannot be accessed from κ1 by using another shift.
+   */
   case CState(Fun(SCont(κ1), κ2), v, γ) => CState(κ1, v, κ2 :: γ)
 }
 
