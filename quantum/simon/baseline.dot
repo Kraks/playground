@@ -1,0 +1,112 @@
+digraph G {
+  // x1 Id1
+  // x2 Id8
+  // x4 Init4
+  // x5 Id2
+  // x6 Id4
+  ordering="out"
+
+  //matmul(kron(kron(x1, H), x2), Init4)
+  n1_kr -> Id1
+  n1_kr -> H
+  n2_kr -> n1_kr
+  n2_kr -> Id8
+  n3_mu -> n2_kr
+  n3_mu -> Init4
+
+  // matmul(kron(kron(x5, H), x6), m3_mu)
+  n4_kr -> Id2
+  n4_kr -> H
+  n5_kr -> n4_kr
+  n5_kr -> Id4
+  n6_mu -> n5_kr
+  n6_mu -> n3_mu
+
+  // matmul(kron(kron(x1, SWAP), x6), x4)
+  n7_kr -> Id1
+  n7_kr -> SWAP
+  n8_kr -> n7_kr
+  n8_kr -> Id4
+  n9_mu -> n8_kr
+  n9_mu -> n6_mu
+
+  // x4 = matmul(kron(kron(x5, CNOT), x5), x4)
+  n10_kr -> Id2
+  n10_kr -> CNOT
+  n11_kr -> n10_kr
+  n11_kr -> Id2
+  n12_mu -> n11_kr
+  n12_mu -> n9_mu
+
+  //x4 = matmul(kron(kron(x6, SWAP), x1), x4)
+  n13_kr -> Id4
+  n13_kr -> SWAP
+  n14_kr -> n13_kr
+  n14_kr -> Id1
+  n15_mu -> n14_kr
+  n15_mu -> n12_mu
+
+  // x4 = matmul(kron(kron(x5, CNOT), x5), x4)
+  n16_kr -> Id2
+  n16_kr -> CNOT
+  n17_kr -> n16_kr
+  n17_kr -> Id2
+  n18_mu -> n17_kr
+  n18_mu -> n15_mu
+
+  // x4 = matmul(kron(kron(x1, SWAP), x6), x4)
+  n19_kr -> Id1
+  n19_kr -> SWAP
+  n20_kr -> n19_kr
+  n20_kr -> Id4
+  n21_mu -> n20_kr
+  n21_mu -> n18_mu
+
+  // x4 = matmul(kron(kron(x5, SWAP), x5), x4)
+  n22_kr -> Id2
+  n22_kr -> SWAP
+  n23_kr -> n22_kr
+  n23_kr -> Id2
+  n24_mu -> n23_kr
+  n24_mu -> n21_mu
+
+  // x4 = matmul(kron(kron(x6, CNOT), x1), x4)
+  n25_kr -> Id4
+  n25_kr -> CNOT
+  n26_kr -> n25_kr
+  n26_kr -> Id1
+  n27_mu -> n26_kr
+  n27_mu -> n24_mu
+
+  // x4 = matmul(kron(kron(x5, SWAP), x5), x4)
+  n28_kr -> Id2
+  n28_kr -> SWAP
+  n29_kr -> n28_kr
+  n29_kr -> Id2
+  n30_mu -> n29_kr
+  n30_mu -> n27_mu
+
+  // x4 = matmul(kron(kron(x5, CNOT), x5), x4)
+  n31_kr -> Id2
+  n31_kr -> CNOT
+  n32_kr -> n31_kr
+  n32_kr -> Id2
+  n33_mu -> n32_kr
+  n33_mu -> n30_mu
+
+  // x4 = matmul(kron(kron(x1, H), x2), x4)
+  n34_kr -> Id1
+  n34_k4 -> H
+  n35_kr -> n34_kr
+  n35_kr -> Id8
+  n36_mu -> n35_kr
+  n36_mu -> n33_mu
+
+  // x4 = matmul(kron(kron(x5, H), x6), x4)
+  n37_kr -> Id2
+  n37_kr -> H
+  n38_kr -> n37_kr
+  n38_kr -> Id4
+  n39_mu -> n38_kr
+  n39_mu -> n36_mu
+}

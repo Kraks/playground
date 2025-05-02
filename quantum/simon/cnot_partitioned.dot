@@ -1,0 +1,74 @@
+digraph G {
+ // x1 = Id1
+ // x2 = Id8
+ // x4 = Init(4)
+ // x5 = Id2
+ // x6 = Id4
+ ordering="out"
+ // CNOT = np.block([[Id2, Zr2],  [Zr2, InvId2]])
+ //CNOT -> Id2, Zr2, Zr2, InvId2
+
+ // x3 = kron(H, x2)
+ n1_kr -> H, Id8
+
+ // t6 = kron(H, x6)
+ n2_kr -> H, Id4
+
+ // t11 = kron(SWAP, x6)
+ n3_kr -> SWAP, Id4
+
+ // t12 = kron(SWAP, x5)
+ n4_kr -> SWAP, Id2
+
+ //x4 = matmul(x3, x4)
+ n5_mu -> n1_kr, Init4
+
+ // t1 = np.block([[H, Zr2], [Zr2, H]])
+ n6_bl -> H, Zr2, Zr2, H
+ // t2 = np.block([[CNOT, Zr4], [Zr4, CNOT]])
+ // or n7_bl -> CNOT, Zr4, Zr4, CNOT
+ n7_bl -> Id2, Zr2, Zr2, InvId2, Zr4, Zr4, Id2, Zr2, Zr2, InvId2
+ // t3 = np.block([[SWAP, Zr4], [Zr4, SWAP]])
+ n8_bl -> SWAP, Zr4, Zr4, SWAP
+ // t4 = np.block([[t3, Zr8], [Zr8, t3]])
+ n9_bl -> n8_bl, Zr8, Zr8, n8_bl
+ // t5 = np.block([[t2, Zr8],  [Zr8, t2]])
+ n10_bl -> n7_bl, Zr8, Zr8, n7_bl
+ // t8 = np.block([[t6, Zr8],  [Zr8, t6]])
+ n11_bl -> n2_kr, Zr8, Zr8, n2_kr
+ // InvId4 = np.block([[Zr2, x5], [x5, Zr2]])
+ n12_bl -> Zr2, Id2, Id2, Zr2
+ // t9 = np.block([[Id4, Zr4],  [Zr4, InvId4]])
+ n13_bl -> Id4, Zr4, Zr4, n12_bl
+ // t10 = np.block([[t9, Zr8], [Zr8, t9]])
+ n14_bl -> n13_bl, Zr8, Zr8, n13_bl
+ // t13 = np.block([[t12, Zr8], [Zr8, t12]])
+ n15_bl -> n4_kr, Zr8, Zr8, n4_kr
+ // t15 = np.block([[t6, Zr8], [Zr8, t6]])
+ n16_bl -> n2_kr, Zr8, Zr8, n2_kr
+
+ // x4 = matmul(t8, x4)
+ n17_mu -> n11_bl, n5_mu
+ // x4 = matmul(t11, x4)
+ n18_mu -> n3_kr, n17_mu
+ // x4 = matmul(t10, x4)
+ n19_mu -> n14_bl, n18_mu
+ // x4 = matmul(t4, x4)
+ n20_mu -> n9_bl, n19_mu
+ // x4 = matmul(t10, x4)
+ n21_mu -> n14_bl, n20_mu
+ // x4 = matmul(t11, x4)
+ n22_mu -> n3_kr, n21_mu
+ // x4 = matmul(t13, x4)
+ n23_mu -> n15_bl, n22_mu
+ // x4 = matmul(t5 , x4)
+ n24_mu -> n10_bl, n23_mu
+ // x4 = matmul(t13, x4)
+ n25_mu -> n15_bl, n24_mu
+ // x4 = matmul(t10, x4)
+ n26_mu -> n14_bl, n25_mu
+ // x4 = matmul(x3, x4)
+ n27_mu -> n1_kr, n26_mu
+ // x4 = matmul(t15, x4)
+ n28_mu -> n16_bl, n27_mu
+}
