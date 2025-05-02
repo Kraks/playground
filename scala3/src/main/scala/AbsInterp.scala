@@ -334,6 +334,11 @@ object Examples {
       Assign("y", Lit(2)),
       Assign("y", Lit(10)))
 
+  val bound =
+    Seq(Assign("x", Lit(1)),
+      While(BinOp("<", Var("x"), Lit(100)),
+        Assign("x", BinOp("+", Var("x"), Lit(1)))))
+
   // input: x
   val nonTerm2 = While(Lit(1), Assign("x", BinOp("-", Var("x"), Lit(1))))
 
