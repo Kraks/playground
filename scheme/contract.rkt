@@ -22,29 +22,60 @@
 
 ;(g2 (λ (x) (- 0 x)))
 
+(module simple-contract racket
+
+  (define (blame s) (error 'contract "~a" s))
+
+  (define (immediate pred?)
+    (λ (val)
+      (if (pred? val) val (blame val))))
+
+  (define (guard ctc val) (ctc val))
+
+  (define (mk-fun-contract dom rng)
+    (λ (f)
+      (if (procedure? f)
+          (λ (x) (rng (f (dom x))))
+          (blame f))))
+
+  (define d/dx
+    (λ (f)
+      (λ (x)
+        (/ (- (f (+ x 0.001))
+              (f x))
+           0.001))))
+
+  (define con-d/dx
+    (guard (mk-fun-contract
+            (mk-fun-contract (immediate number?)
+                             (immediate number?))
+            (mk-fun-contract (immediate number?)
+                             (immediate number?)))
+           d/dx))
+
+  ((con-d/dx (λ (x) (+ x 1))) 3)
+
+  )
+
+(require 'simple-contract)
+
+;; with blame
+
+(define (guard ctc val pos neg)
+  ((ctc pos neg) val))
+
 (define (blame s) (error 'contract "~a" s))
 
 (define (immediate pred?)
-  (λ (val)
-    (if (pred? val) val (blame val))))
-
-(define d/dx
-  (λ (f)
-    (λ (x)
-      (/ (- (f (+ x 0.001))
-            (f x))
-         0.001))))
-
-(define (guard ctc val) (ctc val))
+  (λ (pos neg)
+    (λ (val)
+      (if (pred? val) val (blame pos)))))
 
 (define (function dom rng)
-  (λ (f)
-    (if (procedure? f)
-        (λ (x) (rng (f (dom x))))
-        (blame f))))
-
-(define con-d/dx (guard (function (immediate number?)
-                                  (immediate number?))
-                        d/dx))
-
-((con-d/dx (λ (x) (+ x 1))) 3)
+  (λ (pos neg)
+    (let ([doc-c (dom neg pos)]
+          [rng-c (rng pos neg)])
+      (λ (val)
+        (if (procedure? val)
+            (λ (x) (rng-c (val (doc-c x))))
+            (blame pos))))))
