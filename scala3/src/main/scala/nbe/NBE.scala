@@ -59,7 +59,6 @@ object NotTypefulNbE {
     val k = Lam(x => Lam(y => Var(x)))
     val kk = App(k, k)
     println(nbe(Arrow(Base, Arrow(Base, Arrow(Base, Base))), kk))
-
   }
 }
 
@@ -91,6 +90,7 @@ object NbE {
   def main(args: Array[String]): Unit = {
     println(reify[Base](Var(fresh)))
     println(reify[Base => Base]((x: Base) => x))
+    println(reify[Base => Base]((x: Base) => ((y: Base) => y)(x)))
 
     def K[A, B]: A => B => A = x => y => x
     def S[A, B, C]: (A => B => C) => (A => B) => A => C =
