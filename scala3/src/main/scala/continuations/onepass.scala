@@ -1,4 +1,4 @@
-package cps
+package continuation.onepass
 
 // Code for On One-Pass CPS Transformations
 // https://www.brics.dk/RS/07/6/BRICS-RS-07-6.pdf

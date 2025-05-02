@@ -1,4 +1,4 @@
-package dynamic.continuation
+package continuation.dynamic
 // A Dynamic Continuation-Passing Style for Dynamic Delimited Continuations
 // https://dl.acm.org/doi/pdf/10.1145/2794078
 
@@ -9,6 +9,8 @@ enum Term:
   case Prompt(e: Term)
   case Control(x: String, e: Term)
   case Shift(x: String, e: Term)
+  case Shift0(x: String, e: Term)
+  case Control0(x: String, e: Term)
 import Term._
 
 package adjusted.machine {
@@ -18,6 +20,7 @@ package adjusted.machine {
 enum Value:
   case Clo(x: String, e: Term, ρ: Env)
   case Cont(c: Ctx, t: Trail)
+  case ContS(c: Ctx, t: Trail) // for continuations captured by shift/shift0
 
 enum Ctx:
   case End()
@@ -43,17 +46,40 @@ case class TState(τ: Trail, v: Value, γ: MCtx)
 case class MState(γ: MCtx, v: Value)
 
 def step(s: EState): EState | CState = s match
-  case EState(Var(x), ρ, κ, τ, γ) => CState(κ, ρ(x), τ, γ)
-  case EState(Lam(x, e), ρ, κ, τ, γ) => CState(κ, Clo(x, e, ρ), τ, γ)
-  case EState(App(e1, e2), ρ, κ, τ, γ) => EState(e1, ρ, Arg(e2, ρ, κ), τ, γ)
-  case EState(Prompt(e), ρ, κ, τ, γ) => EState(e, ρ, End(), Nil, (κ, τ) :: γ)
-  case EState(Control(x, e), ρ, κ, τ, γ) => EState(e, ρ + (x -> Cont(κ, τ)), End(), Nil, γ)
+  case EState(Var(x), ρ, κ, τ, γ) =>
+    CState(κ, ρ(x), τ, γ)
+  case EState(Lam(x, e), ρ, κ, τ, γ) =>
+    CState(κ, Clo(x, e, ρ), τ, γ)
+  case EState(App(e1, e2), ρ, κ, τ, γ) =>
+    EState(e1, ρ, Arg(e2, ρ, κ), τ, γ)
+  case EState(Prompt(e), ρ, κ, τ, γ) =>
+    EState(e, ρ, End(), Nil, (κ, τ) :: γ)
+  case EState(Control(x, e), ρ, κ, τ, γ) =>
+    // control/+F- inserts a reset/prompt around the body `e`
+    EState(e, ρ + (x -> Cont(κ, τ)), End(), Nil, γ)
+  case EState(Shift(x, e), ρ, κ, τ, γ) =>
+    // shift/+F+ inserts a reset/prompt around the body `e`
+    EState(e, ρ + (x -> ContS(κ, τ)), End(), Nil, γ)
+  case EState(Control0(x, e), ρ, κ, τ, (κ1, τ1)::γ) =>
+    // control0/-F- does not delimit the body `e` with a reset/prompt
+    EState(e, ρ + (x -> Cont(κ, τ)), κ1, τ1, γ)
+  case EState(Shift0(x, e), ρ, κ, τ, (κ1, τ1)::γ) =>
+    // shift0/-F+ does not delimit the body `e` with a reset/prompt
+    EState(e, ρ + (x -> ContS(κ, τ)), κ1, τ1, γ)
 
 def step(s: CState): TState | EState | CState = s match
-  case CState(End(), v, τ, γ) => TState(τ, v, γ)
-  case CState(Arg(e, ρ, κ), v, τ, γ) => EState(e, ρ, Fun(v, κ), τ, γ)
-  case CState(Fun(Clo(x, e, ρ), κ), v, τ, γ) => EState(e, ρ + (x -> v), κ, τ, γ)
-  case CState(Fun(Cont(κ1, τ1), κ2), v, τ, γ) => CState(κ1, v, τ1 ++ (κ2 :: τ), γ)
+  case CState(End(), v, τ, γ) =>
+    TState(τ, v, γ)
+  case CState(Arg(e, ρ, κ), v, τ, γ) =>
+    EState(e, ρ, Fun(v, κ), τ, γ)
+  case CState(Fun(Clo(x, e, ρ), κ), v, τ, γ) =>
+    EState(e, ρ + (x -> v), κ, τ, γ)
+  case CState(Fun(Cont(κ1, τ1), κ2), v, τ, γ) =>
+    // at the call-site of a control/control0-captured continuation, there is no reset/prompt guard
+    CState(κ1, v, τ1 ++ (κ2 :: τ), γ)
+  case CState(Fun(ContS(κ1, τ1), κ2), v, τ, γ) =>
+    // at the call-site of a shift/shift0-captured continuation, we guard with a reset
+    CState(κ1, v, τ1, (κ2, τ)::γ)
 
 def step(s: TState): CState | MState = s match
   case TState(Nil, v, γ) => MState(γ, v)
@@ -106,7 +132,7 @@ def step(s: EState): EState | CState = s match
   case EState(App(e1, e2), ρ, κ, γ) => EState(e1, ρ, Arg(e2, ρ, κ), γ)
   case EState(Prompt(e), ρ, κ, γ) => EState(e, ρ, End(), κ :: γ)
   case EState(Control(x, e), ρ, κ, γ) => EState(e, ρ + (x -> DCont(κ)), End(), γ)
-  case EState(Shift(x, e), ρ, κ, γ) => EState(e, ρ + (x -> DCont(κ)), End(), γ)
+  case EState(Shift(x, e), ρ, κ, γ) => EState(e, ρ + (x -> SCont(κ)), End(), γ)
 
 def step(s: CState): State = s match
   case CState(End(), v, γ) => MState(γ, v)
