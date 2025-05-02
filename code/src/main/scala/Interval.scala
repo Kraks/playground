@@ -25,44 +25,26 @@ given IntervalLattice(using ldb: Lattice[Double]): Lattice[Interval] with
   def bot = Interval.make(ldb.top, ldb.bot)
   def top = Interval.make(ldb.bot, ldb.top)
   extension (l1: Interval)
-    def ⊑(l2: Interval) = (l1, l2) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) => lb2 ⊑ lb1 && ub1 ⊑ ub2
-    }
-    def ⊔(l2: Interval) = (l1, l2) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒ Interval.make(lb1 ⊓ lb2, ub1 ⊔ ub2)
-    }
-    def ⊓(l2: Interval) = (l1, l2) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒ Interval.make(lb1 ⊔ lb2, ub1 ⊓ ub2)
-    }
+    def ⊑(l2: Interval) = l2.lb ⊑ l1.lb && l1.ub ⊑ l2.ub
+    def ⊔(l2: Interval) = Interval.make(l1.lb ⊓ l2.lb, l1.ub ⊔ l2.ub)
+    def ⊓(l2: Interval) = Interval.make(l1.lb ⊔ l2.lb, l1.ub ⊓ l2.ub)
 
 given IntervalAbsDomain(using lit: Lattice[Interval]): AbsDomain[Interval] with
   extension (l1: Interval)
-    def ▽(l2: Interval): Interval = (l1, l2) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒
-        Interval.make(if (lb1 ⊑ lb2) lb1 else Double.NegativeInfinity,
-                      if (ub2 ⊑ ub1) ub1 else Double.PositiveInfinity)
-    }
-    def △(l2: Interval): Interval = (l1, l2) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) ⇒
-        Interval.make(if (lb1 == Double.NegativeInfinity) lb2 else lb1,
-                      if (ub1 == Double.PositiveInfinity) ub2 else ub1)
-    }
+    def ▽(l2: Interval): Interval =
+      Interval.make(if (l1.lb ⊑ l2.lb) l1.lb else Double.NegativeInfinity,
+                    if (l2.ub ⊑ l1.ub) l1.ub else Double.PositiveInfinity)
+    def △(l2: Interval): Interval =
+      Interval.make(if (l1.lb == Double.NegativeInfinity) l2.lb else l1.lb,
+                    if (l1.ub == Double.PositiveInfinity) l2.ub else l1.ub)
 
 given IntervalArith: Arith[Interval] with
   extension (x: Interval)
-    def +(y: Interval): Interval = (x, y) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) => Interval.make(lb1 + lb2, ub1 + ub2)
-    }
-    def -(y: Interval): Interval = (x, y) match {
-      case (Interval(lb1, ub1), Interval(lb2, ub2)) => Interval.make(lb1 - lb2, ub2 + ub1)
-    }
+    def +(y: Interval): Interval = Interval.make(x.lb + y.lb, x.ub + y.ub)
+    def -(y: Interval): Interval = Interval.make(x.lb - y.ub, x.ub - y.lb)
     def *(y: Interval): Interval = (x, y) match {
       case (Interval(lb1, ub1), Interval(lb2, ub2)) =>
-        val lb1lb2 = lb1 * lb2
-        val lb1ub2 = lb1 * ub2
-        val ub1lb2 = ub1 * lb2
-        val ub1ub2 = ub1 * ub2
-        val arr = List[Double](lb1lb2, lb1ub2, ub1lb2, ub1ub2)
+        val arr = List[Double](lb1 * lb2, lb1 * ub2, ub1 * lb2, ub1 * ub2)
         Interval.make(arr.min, arr.max)
     }
     def /(y: Interval): Interval =
