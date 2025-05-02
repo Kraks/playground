@@ -47,10 +47,36 @@ def dup(using Quotes): Expr[Int] = {
   def plus(x: Expr[Int])(using Quotes): Expr[Int] = {
     '{ $x + $x }
   }
-  val y = plus( '{ println("hello"); 3} )
+  def letPlus(x: Expr[Int])(using Quotes): Expr[Int] = {
+    '{ println("world")
+       val n = $x // let-insertion needs to properly maintain relative order
+       n + n }
+  }
+  val n = '{ println("hello"); 3 }
+  val y = letPlus(n) // plus( '{ println("hello"); 3} )
   println(y.show)
   y
+
+  /*
+  // after erasure
+  def letPlus(x: Int): Int = {
+    println("world")
+    x + x
+  }
+  val n = { println("hello"); 3 }
+  val y = letPlus(n) // plus( '{ println("hello"); 3} )
+  */
 }
+
+/*
+def stuck(using Quotes): Expr[Int => Int] = {
+  val t = '{
+    // definition at level 1, accessing x at level 0
+    (x: Int) => ${ ((y: Int) => '{1})( ((_: Int)=>0)(x) ) }
+  }
+  t
+}
+*/
 
 @main def main: Unit = {
   val pow3 = specPower(3)
