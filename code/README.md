@@ -5,11 +5,12 @@ Author: Guannan Wei <guannanwei@purdue.edu>
 
 This is the accompanying artifact for CS592 project (Compiling to Summaries).
 
-The main content of the artifact is a ``partial'' abstract interpreter.
-Given an incomplete program (e.g. just a function), the ``partial'' abstract
-interpreter can (1) perform possible analysis within this incomplete program,
-and (2) generate code that performs analysis depending on other currently
-unknown programs.
+The main content of the artifact is a ``multi-stage'' abstract interpreter.
+Given an incomplete program (e.g. just a function), the ``multi-stage'' abstract
+interpreter can (1) in the first stage perform possible analysis within this
+incomplete program, and (2) generate code that performs analysis depending on
+other currently unknown programs. In the second stage, when all summaries are
+available, we can obtain the analysis result by running the composed program.
 
 ## Requirement
 
