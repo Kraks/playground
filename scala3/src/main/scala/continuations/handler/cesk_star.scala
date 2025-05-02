@@ -48,12 +48,12 @@ def kappend(k1: Addr, k2: Addr, st: Store): (Addr, Store) =
       val newSt1 = newSt + (newAddr -> KntV(Frame(p, h, lastAddr)))
       (newAddr, newSt1)
 
+val mtPKAddr = KAddr(0)
+val mtKAddr = KAddr(1)
 def inject(e: Comp): State =
-  val pkaddr = KAddr(0)
-  val kaddr1 = KAddr(1)
   val kaddr2 = KAddr(2)
-  val cont0 = Frame(pkaddr, HanClo(Map.empty, Return("x", Ret(Var("x")))), kaddr1)
-  val st0 = Map(pkaddr -> PKntV(MtPK), kaddr1 -> KntV(MtK), kaddr2 -> KntV(cont0))
+  val cont0 = Frame(mtPKAddr, HanClo(Map.empty, Return("x", Ret(Var("x")))), mtKAddr)
+  val st0 = Map(mtPKAddr -> PKntV(MtPK), mtKAddr -> KntV(MtK), kaddr2 -> KntV(cont0))
   PState(e, Map.empty, st0, kaddr2)
 
 def prim(op: String, v1: RValue, v2: RValue): RValue = (v1, v2) match
@@ -100,12 +100,9 @@ def step(s: State): State = s match
     val ka = kalloc(st1)
     PState(rhs, env, st1 + (ka -> kf), ka)
   case PState(Handle(e, h), env, st, kaddr) =>
-    val pa = kalloc(st)
-    val pf = PKntV(MtPK)
-    val st1 = st + (pa -> pf)
-    val ka = kalloc(st1)
-    val kf = KntV(Frame(pa, HanClo(env, h), kaddr))
-    PState(e, env, st1 + (ka -> kf), ka)
+    val ka = kalloc(st)
+    val kf = KntV(Frame(mtPKAddr, HanClo(env, h), kaddr))
+    PState(e, env, st + (ka -> kf), ka)
   case PState(Ret(v), env, st, kaddr) =>
     val KntV(Frame(pa, ho, krest)) = st(kaddr)
     st(pa) match
@@ -121,29 +118,23 @@ def step(s: State): State = s match
         val addr = balloc(st)
         PState(e, env1 + (x -> addr), st + (addr -> eval(v, env, st)), krest)
   case PState(Do(l, v), env, st, kaddr) =>
-    val kaddr1 = kalloc(st)
-    val newSt = st + (kaddr1 -> KntV(MtK))
-    EState(Do(l, v), env, newSt, kaddr, kaddr1)
+    EState(Do(l, v), env, st, kaddr, mtKAddr)
   case EState(Do(l, v), env, st, kaddr, kaddr1) =>
     val KntV(f@Frame(pf, HanClo(env1, h), k)) = st(kaddr)
     opOf(h, l) match
       case Some(Op(_, x, c, body, _)) =>
         val baddr = balloc(st)
-        val st0 = st + (baddr -> eval(v, env, st))
-        val kaddr2 = kalloc(st0)
-        val st1 = st0 + (kaddr2 -> KntV(MtK))
-        val kaddr3 = kalloc(st1)
-        val st2 = st1 + (kaddr3 -> KntV(Frame(pf, HanClo(env1, h), kaddr2)))
-        val (kaddr4, newSt) = kappend(kaddr1, kaddr3, st2)
-        val newEnv = env1 + (x -> baddr) + (c -> kaddr4)
+        val st1 = st + (baddr -> eval(v, env, st))
+        val kaddr2 = kalloc(st1)
+        val st2 = st1 + (kaddr2 -> KntV(Frame(pf, HanClo(env1, h), mtKAddr)))
+        val (kaddr3, newSt) = kappend(kaddr1, kaddr2, st2)
+        val newEnv = env1 + (x -> baddr) + (c -> kaddr3)
         PState(body, newEnv, newSt, k)
       case None =>
-        val kaddr2 = balloc(st)
-        val st1 = st + (kaddr2 -> KntV(MtK))
-        val kaddr3 = kalloc(st1)
-        val st2 = st1 + (kaddr3 -> KntV(Frame(pf, HanClo(env1, h), kaddr2)))
-        val (kaddr4, st3) = kappend(kaddr1, kaddr3, st2)
-        EState(Do(l, v), env, st3, k, kaddr4)
+        val kaddr2 = kalloc(st)
+        val st1 = st + (kaddr2 -> KntV(Frame(pf, HanClo(env1, h), mtKAddr)))
+        val (kaddr3, st3) = kappend(kaddr1, kaddr2, st1)
+        EState(Do(l, v), env, st3, k, kaddr3)
 
 def drive(s: State, i: Int): State =
   if (i <= 0) s
