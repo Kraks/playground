@@ -29,4 +29,8 @@ lemma indexrHead : ∀ {A} (x : A) (xs : List A),
   indexr xs.length (x :: xs) = some x := by intros A x xs; simp
 
 lemma indexrNone : ∀ {A} (xs : List A) i,
-  i >= xs.length -> indexr i xs = none := by sorry
+  i >= xs.length -> indexr i xs = none := by
+  intros A xs i h; induction xs <;> simp
+  case cons x xs ih =>
+    simp at h; have h' : ¬ i = xs.length := by omega
+    rw [if_neg h']; apply ih; omega
