@@ -9,7 +9,7 @@ type all	 ty -> (ty -> ty) -> ty.
 type abs	 ty -> (tm -> tm) -> tm.
 type app	 tm -> tm -> tm.
 type tabs	 ty -> (ty -> tm) -> tm.
-type tapp	 tm ty -> tm.
+type tapp	 tm -> ty -> tm.
 
 type sub	 ty -> ty -> o.
 type typeof	 tm -> ty -> o.
