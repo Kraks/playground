@@ -233,6 +233,7 @@ def backtrack(trail: Trail): Trail =
     case _ => trail
   }
 
+// Note: could add pure-var elimination too
 def dpli(f: Formula, trail: Trail): Option[Asn] = {
   val (f1, trail1) = unitPropagate(f, trail)
   if (f1.hasUnsatClause) 
@@ -250,5 +251,37 @@ def dpli(f: Formula, trail: Trail): Option[Asn] = {
   }
 }
 
-// TODO:
-// DPLP = Unit prop + Pure var elim + _Simple_ conflict analysis + Backjumping
+// DPLB = Unit prop + Pure var elim + _Simple_ conflict analysis + Backjumping
+
+def backjump(f: Formula, p: Lit, trail: Trail): Trail = {
+  backtrack(trail) match {
+    case Guessed(q)::ts =>
+      val (f1, trail1) = unitPropagate(f, Guessed(p)::ts)
+      if (f1.hasUnsatClause) backjump(f, p, ts) else trail
+    case _ => trail
+  }
+}
+
+def dplb(f: Formula, trail: Trail): Option[Asn] = {
+  val (f1, trail1) = unitPropagate(f, trail)
+  if (f1.hasUnsatClause)
+    backtrack(trail) match {
+      case Guessed(p)::ts =>
+        val trail2 = backjump(f, p, ts)
+        val declits = trail2.filter(_.isInstanceOf[Guessed])
+        val conflict = -p::declits.map(-_.lit)
+        //println(s"Trail: $trail")
+        //println(s"Conflict: ${Clause(conflict)}")
+        dplb(f.addClause(Clause(conflict)), Deduced(-p)::trail2)
+      case _ => None
+    }
+  else {
+    val vs = unassigned(f, trail1)
+    if (vs.isEmpty) Some(trail1.map(_.lit).toList)
+    else {
+      val p = vs.maxBy(l => f.posNegCount(l))
+      dplb(f, Guessed(p)::trail1)
+    }
+  }
+}
+
