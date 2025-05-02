@@ -8,9 +8,9 @@ import Stmt._
 type AbsVal = Interval
 type AbsStore = Map[String, AbsVal]
 
-def lfp[T: Lattice](f: T => T)(t: T): T =
+def lfp[T: Lattice : AbsDomain](f: T => T)(t: T): T =
   val next = f(t)
-  if (next ⊑ t) t else lfp(f)(next ⊔ t)
+  if (next ⊑ t) t else lfp(f)(next ▽ t)
 
 def absEvalOp(op: String, i1: AbsVal, i2: AbsVal): AbsVal =
   op match {
