@@ -29,7 +29,7 @@ def absEvalOp(op: String, i1: AbsVal, i2: AbsVal): AbsVal =
     case "=" =>
       if (i1.toConst == i2.toConst) Interval.from(1)
       else Interval.from(0, 1)
-    case _ => ???
+    case _ => throw new RuntimeException("Unsupported operation")
   }
 
 def absEval(s: Expr, σ: AbsStore)(using Γ: FunEnv): AbsVal =

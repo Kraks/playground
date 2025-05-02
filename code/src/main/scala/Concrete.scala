@@ -27,7 +27,7 @@ def evalOp(op: String, v1: Value, v2: Value): Value =
     case "<" => if (i1 < i2) 1 else 0
     case ">" => if (i1 > i2) 1 else 0
     case "=" => if (i1 == i2) 1 else 0
-    case _ => ???
+    case _ => throw new RuntimeException("Unsupported operation")
   }
 
 def eval(s: Expr, σ: Store)(using Γ: FunEnv): Value =

@@ -92,11 +92,12 @@ given MapLattice[K, V](using lv: Lattice[V]): Lattice[Map[K, V]] with
     def ⊔(m2: Map[K, V]): Map[K, V] =
       m2.foldLeft(m1) { case (m, (k, v)) => m + (k -> v ⊔ m.getOrElse(k, lv.bot)) }
     def ⊓(m2: Map[K, V]): Map[K, V] =
-      m1.keySet.intersect(m2.keySet).foldLeft(Map[K,V]()) {
-        case (m, k) => m + (k -> m1(k) ⊓ m2(k)) }
+      m1.keySet.intersect(m2.keySet).foldLeft(Map[K,V]()) { case (m, k) => m + (k -> m1(k) ⊓ m2(k)) }
 
 given MapAbsDomain[K, V: Lattice : AbsDomain]: AbsDomain[Map[K, V]] with
   val lv = summon[Lattice[V]]
   extension (m1: Map[K, V])
-    def ▽(m2: Map[K, V]): Map[K, V] = ???
-    def △(m2: Map[K, V]): Map[K, V] = ???
+    def ▽(m2: Map[K, V]): Map[K, V] =
+      m2.foldLeft(m1) { case (m, (k, v)) => m + (k -> v ▽ m.getOrElse(k, lv.bot)) }
+    def △(m2: Map[K, V]): Map[K, V] =
+      m1.keySet.intersect(m2.keySet).foldLeft(Map[K,V]()) { case (m, k) => m + (k -> m1(k) △ m2(k)) }
