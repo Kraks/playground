@@ -4,3 +4,4 @@
 import STLC.Smallstep
 import STLC.Smallstep_Ctx
 import STLC.Smallstep_LR
+import STLC.Smallstep_Equiv

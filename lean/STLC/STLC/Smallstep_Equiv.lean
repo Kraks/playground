@@ -1,17 +1,20 @@
 -- STLC
 -- locally nameless where free variables are de Bruijn levels
--- call-by-value small-step semantics and logical relations
--- safety and termination
+-- call-by-value small-step semantics and binary logical relations
+-- contextual equivalence
 
 import Mathlib.Data.Finset.Sort
 import STLC.Env
 
-namespace Smallstep_LR
+namespace Smallstep_Equiv
 
 inductive ty : Type
+| bool : ty
 | arrow : ty → ty → ty
 
 inductive tm : Type
+| fls : tm
+| tru : tm
 | bvar : ℕ → tm
 | fvar : ℕ → tm
 | abs : tm → tm
@@ -24,6 +27,7 @@ abbrev venv := List tm
 @[simp]
 def openSubst (t1: tm) (n: ℕ) (t2: tm) : tm :=
   match t1 with
+  | .fls | .tru => t1
   | .bvar x =>
     if x = n then t2
     else if n < x then .bvar (x - 1)
@@ -33,14 +37,10 @@ def openSubst (t1: tm) (n: ℕ) (t2: tm) : tm :=
   | .app t11 t12 =>
     .app (openSubst t11 n t2) (openSubst t12 n t2)
 
-#eval openSubst (.bvar 0) 0 (.fvar 0)
-#eval openSubst (.abs (.bvar 1)) 0 (.fvar 0)
-#eval openSubst (.app (.abs (.app (.bvar 1) (.bvar 0))) (.bvar 0)) 0 (.fvar 0)
-#eval openSubst (.bvar 1) 0 (.fvar 0)
-
 @[simp]
 def substF (Δ: venv) (t: tm) : tm :=
   match t with
+  | .fls | .tru => t
   | .bvar _ => t
   | .fvar x =>
     match indexr x Δ with
@@ -52,6 +52,7 @@ def substF (Δ: venv) (t: tm) : tm :=
 @[simp]
 def closedF (t: tm) (n: ℕ) : Prop :=
   match t with
+  | .fls | .tru => true
   | .bvar _ => true
   | .fvar x => x < n
   | .abs t1 => closedF t1 n
@@ -60,6 +61,7 @@ def closedF (t: tm) (n: ℕ) : Prop :=
 @[simp]
 def closedB (t: tm) (n: ℕ) : Prop :=
   match t with
+  | .fls | .tru => true
   | .bvar x => x < n
   | .fvar _ => true
   | .abs t1 => closedB t1 (n + 1)
@@ -163,6 +165,8 @@ lemma substFClosedBComm: ∀ t Δ n,
 def binds x τ (Γ : tenv) := (indexr x Γ = some τ)
 
 inductive hasType : tenv → tm → ty → Prop
+| fls : ∀ Γ, hasType Γ .fls .bool
+| tru : ∀ Γ, hasType Γ .tru .bool
 | var : ∀ Γ x τ, binds x τ Γ → hasType Γ (.fvar x) τ
 | abs : ∀ Γ t τ₁ τ₂,
   hasType (τ₁::Γ) (openSubst t 0 (.fvar Γ.length)) τ₂ →
@@ -174,6 +178,8 @@ inductive hasType : tenv → tm → ty → Prop
   hasType Γ (.app t₁ t₂) τ₂
 
 inductive value : tm → Prop
+| fls : value .fls
+| tru : value .tru
 | abs : ∀ t, value (.abs t)
 
 inductive step : tm → tm → Prop
@@ -208,108 +214,144 @@ lemma stepnTrans : ∀ t1 t2 t3, stepn t1 t2 → stepn t2 t3 → stepn t1 t3 := 
   . case _ _ _ hstn hst ih =>
     apply stepn.multi; apply ih; assumption
 
-@[simp]
-def valType : tm → ty → Prop
-| .abs t2, .arrow τ1 τ2 =>
-  ∀ v1, valType v1 τ1 ∧ closedB v1 0 →
-  ∃ v2, stepn (openSubst t2 0 v1) v2 ∧ closedB v2 0 ∧ valType v2 τ2
-| _, _ => false
-
-lemma valTypeValue : ∀ t τ, valType t τ → value t := by
-  intros t τ h; cases t <;> try simp at h
-  next t => apply value.abs
-
-@[simp]
-def expType (t : tm) (τ : ty) : Prop := ∃ v, stepn t v ∧ closedB v 0 ∧ valType v τ
+inductive ctxType : (tm → tm) → tenv → ty → tenv → ty → Prop
+| root : ∀ Γ τ, ctxType id Γ τ Γ τ
+| app1 : ∀ Γ τ1 τ2 t2,
+  hasType Γ t2 τ1 →
+  ctxType (λ t1 => .app t1 t2) Γ (.arrow τ1 τ2) Γ τ2
+| app2 : ∀ Γ τ1 τ2 t1,
+  hasType Γ t1 (.arrow τ1 τ2) →
+  ctxType (λ t2 => .app t1 t2) Γ τ1 Γ τ2
+| abs : ∀ Γ τ1 τ2,
+  ctxType (λ t => .abs t) (τ1::Γ) τ2 Γ (.arrow τ1 τ2)
 
 @[simp]
-def envType (Δ : venv) (Γ : tenv) : Prop :=
-  Δ.length = Γ.length ∧
+def valType (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
+  match t1, t2, τ with
+  | .fls, .fls, .bool => true
+  | .tru, .tru, .bool => true
+  | (.abs t1), (.abs t2), .arrow τ1 τ2 =>
+    ∀ v1 v2,
+    valType v1 v2 τ1 → closedB v1 0 → closedB v2 0 →
+    ∃ v3 v4,
+    stepn (openSubst t1 0 v1) v3 ∧ closedB v3 0 ∧
+    stepn (openSubst t2 0 v2) v4 ∧ closedB v4 0 ∧
+    valType v3 v4 τ2
+  | _, _, _ => false
+
+lemma valTypeValue : ∀ t1 t2 τ, valType t1 t2 τ → value t1 ∧ value t2 := by
+  intros t1 t2 τ h; cases t1 <;> cases t2 <;> try simp at h
+  . apply And.intro <;> constructor
+  . apply And.intro <;> constructor
+  . next t1 t2 => apply And.intro <;> apply value.abs
+
+@[simp]
+def expType (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
+  ∃ v1 v2, stepn t1 v1 ∧ stepn t2 v2 ∧
+           closedB v1 0 ∧ closedB v2 0 ∧
+           valType v1 v2 τ
+
+@[simp]
+def envType (Δ1 : venv) (Δ2 : venv) (Γ : tenv) : Prop :=
+  Δ1.length = Γ.length ∧
+  Δ2.length = Γ.length ∧
   ∀ τ x, binds x τ Γ →
-  ∃ v, indexr x Δ = some v ∧ closedB v 0 ∧ valType v τ
+  ∃ v1 v2,
+  indexr x Δ1 = some v1 ∧ closedB v1 0 ∧
+  indexr x Δ2 = some v2 ∧ closedB v2 0 ∧
+  valType v1 v2 τ
 
-lemma envTypeMt : envType [] [] := by simp
+lemma envTypeMt : envType [] [] [] := by simp
 
-lemma envTypeExtend : ∀ Δ Γ v τ,
-  envType Δ Γ → closedB v 0 → valType v τ → envType (v::Δ) (τ::Γ) := by
-  intros Δ Γ v τ henv hcl hv; simp; simp at henv
-  apply And.intro
-  . apply henv.1
-  . intros τ1 x bd; rcases henv with ⟨hlen, h⟩
-    by_cases hx: (x = Γ.length)
-    . rw [hx] at bd; simp at bd;
-      rw [hlen]; simp [hx]; rw [<-bd]; apply And.intro; assumption; assumption
-    . rw [if_neg hx] at bd; rw [hlen]; rw [if_neg hx]
-      apply h; assumption
+lemma envTypeExtend : ∀ Δ1 Δ2 Γ v1 v2 τ,
+  envType Δ1 Δ2 Γ →
+  closedB v1 0 → closedB v2 0 →
+  valType v1 v2 τ →
+  envType (v1::Δ1) (v2::Δ2) (τ::Γ) := by sorry
 
-lemma envTypeClosed : ∀ Δ Γ, envType Δ Γ →
-  (∀ x t1, indexr x Δ = some t1 → closedB t1 0) := by
-  intros Δ Γ henv; rcases henv with ⟨hlen, h⟩
-  intros x t1 hidx;
-  have hx : (x < Δ.length) := by apply indexrSome'; exists t1
-  rw [hlen] at hx; have hidx' := indexrSome Γ x hx
-  rcases hidx' with ⟨τ, hidx'⟩;
-  have ⟨t2, hidx'', hval⟩  := h τ x hidx'
-  rcases hval with ⟨hcl, _⟩; rw [hidx] at hidx''; cases hidx''; assumption
+lemma envTypeClosed : ∀ Δ1 Δ2 Γ, envType Δ1 Δ2 Γ →
+  (∀ x t1, indexr x Δ1 = some t1 → closedB t1 0) ∧
+  (∀ x t1, indexr x Δ2 = some t1 → closedB t1 0) := by sorry
 
 @[simp]
-def semType (Γ : tenv) (t : tm) (τ : ty) : Prop :=
-  ∀ Δ, closedB t 0 → envType Δ Γ → expType (substF Δ t) τ
+def semType (Γ : tenv) (t1 t2 : tm) (τ : ty) : Prop :=
+  ∀ Δ1 Δ2,
+  closedB t1 0 → closedB t2 0 →
+  envType Δ1 Δ2 Γ →
+  expType (substF Δ1 t1) (substF Δ2 t2) τ
 
--- compatibility lemmas
+lemma semTrue : ∀ Γ, semType Γ .tru .tru .bool := by
+  intros Γ Δ1 Δ2 h _ _ ; exists (.tru); exists (.tru); simp; apply stepn.refl
 
-lemma semVar: ∀ Γ x τ, binds x τ Γ → semType Γ (.fvar x) τ := by
-  intros Γ x τ bd Δ hcl henv; simp;
-  rcases henv with ⟨_, h⟩;
-  have ⟨v, hrv, semv⟩ := h τ x bd;
-  exists v; rw [hrv]; simp; constructor; constructor; apply semv
+lemma semFalse : ∀ Γ, semType Γ .fls .fls .bool := by
+  intros Γ Δ1 Δ2 h _ _; exists (.fls); exists (.fls); simp; apply stepn.refl
 
-lemma semApp: ∀ Γ f t τ1 τ2,
-  semType Γ f (.arrow τ1 τ2) →
-  semType Γ t τ1 →
-  semType Γ (.app f t) τ2 := by
-  intros Γ f t τ1 τ2 hsemf hsemt Δ hcl henv
-  rcases hcl  with ⟨hclf, hclt⟩
-  rcases hsemf Δ hclf henv with ⟨fv, hfv, clfv, semfv⟩
-  rcases hsemt Δ hclt henv with ⟨tv, htv, cltv, semtv⟩
-  unfold valType at semfv; cases fv <;> simp at semfv;
-  case _ ft =>
-  have ⟨v2, v2st, semv2⟩ := semfv tv semtv cltv
-  exists v2; apply And.intro;
-  . simp;
-    apply stepnTrans; apply stepnApp1; assumption
-    apply stepnTrans; apply stepnApp2; constructor; assumption
-    have stbeta : step (ft.abs.app tv) (openSubst ft 0 tv) :=
-      by apply step.beta; apply valTypeValue; assumption
-    apply stepnTrans; apply stepn.multi; apply stepn.refl
-    apply stbeta; apply v2st;
-  . assumption
+lemma semVar : ∀ Γ x τ, binds x τ Γ → semType Γ (.fvar x) (.fvar x) τ := by
+  intros Γ x τ hbd Δ1 Δ2 hcl hcl henv
+  rcases henv with ⟨_, _, h⟩
+  have ⟨v1, v2, idx1, cl1, idx2, cl2, semv⟩ := h τ x hbd
+  exists v1; exists v2; simp [idx1, idx2]
+  exact ⟨stepn.refl v1, stepn.refl v2, cl1, cl2, semv⟩
 
-lemma semAbs: ∀ Γ t τ1 τ2,
-  semType (τ1::Γ) (openSubst t 0 (.fvar Γ.length)) τ2 →
-  closedF t Γ.length →
-  semType Γ (.abs t) (.arrow τ1 τ2) := by
-  intros Γ t τ1 τ2 hsemt hclosed Δ hcl henv
-  exists (substF Δ (.abs t))
-  apply And.intro
-  . apply stepn.refl
-  . simp at hcl; have hcl' := openClosed' t (Γ.length) 0 hcl
-    apply And.intro
-    . simp; apply substFClosedBComm _ _ _ (envTypeClosed Δ Γ henv) hcl
-    . simp; intros v1 hv1 hclv1;
-      unfold semType at hsemt;
-      have henv' := envTypeExtend Δ Γ v1 τ1 henv hclv1 hv1
-      have hsemt' := hsemt (v1::Δ) hcl' henv'
-      simp at hsemt'; rcases hsemt' with ⟨vy, hyst, semvy⟩
-      exists vy; apply And.intro
-      . rw [<-henv.1] at hyst; rw [substFOpenComm] at hyst; assumption
-        rw [henv.1]; assumption; apply envTypeClosed Δ Γ henv
-      . assumption
+lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
+  semType Γ f1 f2 (.arrow τ1 τ2) →
+  semType Γ t1 t2 τ1 →
+  semType Γ (.app f1 t1) (.app f2 t2) τ2 := by
+  intros Γ f1 f2 t1 t2 τ1 τ2 hsemf hsemt Δ1 Δ2 hclb1 hclb2 henv
+  rcases hclb1 with ⟨hclbf1, hclbt1⟩
+  rcases hclb2 with ⟨hclbf2, hclbt2⟩
+  rcases hsemf Δ1 Δ2 hclbf1 hclbf2 henv with ⟨v1, v2, hstn1, hstn2, hcl1, hcl2, hv12⟩
+  rcases hsemt Δ1 Δ2 hclbt1 hclbt2 henv with ⟨v3, v4, hstn3, hstn4, hcl3, hcl4, hv34⟩
+  cases v1 <;> cases v2 <;> try simp at hv12
+  case _ f1t f2t =>
+  have ⟨v5, hst5, hcl5, v6, hst6, hcl6, hv56⟩ := hv12 v3 v4 hv34 hcl3 hcl4
+  exists v5; exists v6; constructor
+  apply stepnTrans; apply stepnApp1; assumption
+  apply stepnTrans; apply stepnApp2; constructor; assumption
+  have stbeta : step (f1t.abs.app v3) (openSubst f1t 0 v3) :=
+    by apply step.beta; exact (valTypeValue _ _ _ hv34).1
+  apply stepnTrans; apply stepn.multi; apply stepn.refl
+  apply stbeta; apply hst5;
+  --
+  constructor
+  apply stepnTrans; apply stepnApp1; assumption
+  apply stepnTrans; apply stepnApp2; constructor; assumption
+  have stbeta : step (f2t.abs.app v4) (openSubst f2t 0 v4) :=
+    by apply step.beta; exact (valTypeValue _ _ _ hv34).2
+  apply stepnTrans; apply stepn.multi; apply stepn.refl
+  apply stbeta; apply hst6;
+  exact ⟨hcl5, hcl6, hv56⟩
 
--- fundamental property
+lemma semAbs : ∀ Γ t1 t2 τ1 τ2,
+  semType (τ1::Γ) (openSubst t1 0 (.fvar Γ.length)) (openSubst t2 0 (.fvar Γ.length)) τ2 →
+  closedF t1 Γ.length → closedF t2 Γ.length →
+  semType Γ (.abs t1) (.abs t2) (.arrow τ1 τ2) :=
+by
+  intros Γ t1 t2 τ1 τ2 hsem hcl1 hcl2 Δ1 Δ2 hclb1 hclb2 henv
+  exists (substF Δ1 (.abs t1)); exists (substF Δ2 (.abs t2))
+  constructor; apply stepn.refl
+  constructor; apply stepn.refl
+  simp at hclb1; simp at hclb2
+  have hclb1' := openClosed' t1 (Γ.length) 0 hclb1
+  have hclb2' := openClosed' t2 (Γ.length) 0 hclb2
+  have envcl := envTypeClosed Δ1 Δ2 Γ henv
+  constructor; apply substFClosedBComm _ _ _ envcl.1 hclb1
+  constructor; apply substFClosedBComm _ _ _ envcl.2 hclb2
+  simp; intros v1 v2 hval12 hclv1 hclv2
+  have henv' := envTypeExtend Δ1 Δ2 Γ v1 v2 τ1 henv hclv1 hclv2 hval12
+  have hsem' := hsem (v1::Δ1) (v2::Δ2) hclb1' hclb2' henv'
+  rcases hsem' with ⟨vr1, vr2, hstr1, hstr2, hclvr1, hclvr2, semvr⟩
+  rw [<-henv.1] at hstr1; rw [<-henv.2.1] at hstr2
+  rw [substFOpenComm] at hstr1; rw [substFOpenComm] at hstr2
+  exists vr1; constructor; assumption; constructor; assumption
+  exists vr2; rw [henv.2.1]; assumption; exact envcl.2
+  rw [henv.1]; assumption; exact envcl.1
 
-lemma fundamental : ∀ Γ t τ, hasType Γ t τ → semType Γ t τ := by
+theorem fundamental : ∀ Γ t τ,
+  hasType Γ t τ → semType Γ t t τ := by
   intros Γ t τ h; induction h
+  case fls => apply semFalse
+  case tru => apply semTrue
   case var => apply semVar; assumption
   case abs => apply semAbs <;> assumption
   case app => apply semApp <;> assumption
@@ -323,8 +365,10 @@ lemma substFMt: ∀ t, substF [] t = t := by
   intros t; induction t <;> simp
   assumption; apply And.intro <;> assumption
 
-theorem safety : ∀ t τ, hasType [] t τ → expType t τ := by
+theorem safety : ∀ t τ, hasType [] t τ → expType t t τ := by
   intros t τ h; have h' := fundamental _ _ _ h
-  simp at h'; rcases h' (hasTypeClosed _ _ _ h) with ⟨v, hst, hval⟩
-  simp; exists v; rw [substFMt] at hst;
-  apply And.intro <;> assumption
+  have hcl := hasTypeClosed [] t τ h
+  simp at h'; rcases h' [] [] hcl rfl rfl with ⟨v1, hst1, v2, hst2, hcl1, hcl2, hval⟩; simp
+  exists v1; rw [substFMt] at hst1; constructor; assumption
+  exists v2; rw [substFMt] at hst2; constructor; assumption
+  exact ⟨hcl1, hcl2, hval⟩
