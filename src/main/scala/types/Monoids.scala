@@ -125,11 +125,97 @@ object Monoids {
     foldMap(xs.toList, m)(i => (Some(i), true))._2
   }
 
+  /* Exercise 10.10 */
+
+  sealed trait WC
+  case class Stub(chars: String) extends WC
+  case class Part(lStub: String, words: Int, rStub: String) extends WC
+
+  def WCMonoid: Monoid[WC] = new Monoid[WC] {
+    val id = Stub("")
+    def op(a: WC, b: WC): WC = (a, b) match {
+      case (Stub(c), Stub(d)) => Stub(c + d)
+      case (Stub(c), Part(l, w, r)) => Part(c + l, w, r)
+      case (Part(l, w, r), Stub(c)) => Part(l, w, r + c)
+      case (Part(l1, w1, r1), Part(l2, w2, r2)) =>
+        Part(l1, w1 + (if ((r1 + l2).isEmpty) 0 else 1) + w2, r2)
+    }
+  }
+
+  /* Exercise 10.11 */
+
+  def count(s: String): Int = {
+    def wc(c: Char): WC = if (c.isWhitespace) Part("", 0, "") else Stub(c.toString)
+    def unstub(s: String) = s.length min 1
+    foldMapV(s.toIndexedSeq, WCMonoid)(wc) match {
+      case Stub(s) => unstub(s)
+      case Part(l, w, r) => unstub(l) + w + unstub(r)
+    }
+  }
+}
+
+import Monoids._
+
+trait Foldable[F[_]] {
+  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
+    foldMap(as)(f.curried)(endoMonoid[B])(z)
+  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B =
+    foldMap(as)((a: A) => (b: B) => f(b, a))(dual(endoMonoid[B]))(z)
+  def foldMap[A, B](as: F[A])(f: A => B)(m: Monoid[B]): B =
+    foldRight(as)(m.id)((a, b) => m.op(f(a), b))
+  def concatenate[A](as: F[A])(m: Monoid[A]): A = foldLeft(as)(m.id)(m.op)
+
+  /* Exercise 10.15 */
+  def toList[A](fa: F[A]): List[A] = foldRight(fa)(List[A]())((a, b) => a :: b)
+}
+
+/* Exercise 10.12 */
+
+object FoldableList extends Foldable[List] {
+  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+    as.foldRight(z)(f)
+}
+
+/* Exercise 10.13 */
+
+sealed trait Tree[+A]
+case class Leaf[A](value: A) extends Tree[A]
+case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+
+object FoldableTree extends Foldable[Tree] {
+  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) = as match {
+    case Leaf(a) => f(a, z)
+    case Branch(l, r) => foldRight(l)(foldRight(r)(z)(f))(f)
+  }
+  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) = as match {
+    case Leaf(a) => f(z, a)
+    case Branch(l, r) => foldLeft(r)(foldLeft(l)(z)(f))(f)
+  }
+  override def foldMap[A, B](as: Tree[A])(f: A => B)(m: Monoid[B]): B = as match {
+    case Leaf(a) => f(a)
+    case Branch(l, r) => m.op(foldMap(l)(f)(m), foldMap(r)(f)(m))
+  }
+}
+
+/* Exercise 10.14 */
+
+object FoldableOption extends Foldable[Option] {
+  override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) = as match {
+    case None => z
+    case Some(a) => f(a, z)
+  }
+}
+
+object ChapMonoids {
   def main(args: Array[String]) {
     println(isOrdered(Array(1,2,3,4,4)))
     println(isOrdered(Array(1,2,3,4,5).reverse))
     println(isOrdered(Array(1,1,1,1,1)))
     println(isOrdered(Array(1,1,0,1,1)))
+
+    println(FoldableList.foldRight(List(1,2,3,4))(0)((a, b) => a + b))
+    println(FoldableList.foldMap(List(1,2,3,4))(x => x+1)(intAdd))
+    println(FoldableList.foldMap(List(1,2,3,4))(x => x+1)(intMul))
   }
 }
 
