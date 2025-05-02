@@ -1,4 +1,4 @@
-package types
+package types.fpbook
 
 trait Semigroup[A] {
   /* Associativity: ∀ a b c, op(op(a, b), c) = op(a, op(b, c)). */
