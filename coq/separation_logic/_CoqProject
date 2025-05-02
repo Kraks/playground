@@ -1,5 +1,5 @@
 -R . SLF
-Basic.v         LibEpsilon.v   LibListZ.v     LibOperation.v  LibSepFmap.v       LibSet.v
+LibEpsilon.v    LibListZ.v     LibOperation.v  LibSepFmap.v       LibSet.v
 LibAxioms.v     LibEqual.v     LibLogic.v     LibOption.v     LibSepMinimal.v    LibString.v
 LibBool.v       LibFun.v       LibMin.v       LibOrder.v      LibSepReference.v  LibSum.v
 LibChoice.v     LibInt.v       LibMonoid.v    LibProd.v       LibSepSimpl.v      LibTactics.v
