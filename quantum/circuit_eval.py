@@ -118,5 +118,7 @@ print(s.state)
 s = QState(2)
 s.H(0)
 s.CNOT(0)
+s.s(0)
+s.t(0)
 
 print(s.state)
