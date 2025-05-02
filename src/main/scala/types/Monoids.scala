@@ -93,5 +93,43 @@ object Monoids {
 
   def foldLeft[A, B](as: List[A])(acc: B)(f: (B, A) => B): B =
     foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(acc)
+
+  /* Exercise 10.7 */
+
+  def foldMapV[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
+    if (v.length == 0) m.id
+    else if (v.length == 1) f(v(0))
+    else {
+      val (l, r) = v.splitAt(v.length / 2)
+      m.op(foldMapV(l, m)(f), foldMapV(r, m)(f))
+    }
+
+  /* Exercise 10.8 */
+
+  /* TODO */
+
+  /* Exercise 10.9 */
+
+  def isOrdered(xs: IndexedSeq[Int]): Boolean = {
+    val m = new Monoid[(Option[Int], Boolean)] {
+      def op(a1: (Option[Int], Boolean), a2: (Option[Int], Boolean)) = {
+        (a1, a2) match {
+          //Note: this assumes fold from left.
+          case ((Some(x), b1), (Some(y), b2)) => (Some(y), (x<=y) && b1 && b2)
+          case ((None, _), a2) => a2
+          case (a1, (None, _)) => a1
+        }
+      }
+      def id = (None, true)
+    }
+    foldMap(xs.toList, m)(i => (Some(i), true))._2
+  }
+
+  def main(args: Array[String]) {
+    println(isOrdered(Array(1,2,3,4,4)))
+    println(isOrdered(Array(1,2,3,4,5).reverse))
+    println(isOrdered(Array(1,1,1,1,1)))
+    println(isOrdered(Array(1,1,0,1,1)))
+  }
 }
 
