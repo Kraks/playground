@@ -81,5 +81,3 @@ theorem Term.constFold_sound (e : Term ctx ty) :
   | app f a => simp [*]
   | lam b => simp [*]
   | «let» a b iha ihb => simp [*]
-
-
