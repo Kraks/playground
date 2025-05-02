@@ -69,9 +69,12 @@ theorem Term.constFold_sound (e : Term ctx ty) :
   | const n => simp
   | var h => simp
   | plus a b iha ihb =>
-    next he1 he2  => simp [<- iha, <- ihb, he1, he2]
+    simp
+    split
+    next he1 he2 => simp [<- iha, <- ihb, he1, he2]
     next => simp [iha, ihb]
-  | app f a => simp
-  | lam b => simp
-  |
+  | app f a => simp [*]
+  | lam b => simp [*]
+  | «let» a b iha ihb => simp [*]
+
 
