@@ -1,11 +1,15 @@
 -- STLC
 -- locally nameless with cofinite quantification
--- call-by-value contextual reduction semantics
+-- call-by-value structural small-step semantics
 
--- Based on the base version
+-- Roughly following the following materials:
+-- https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc/STLC_Tutorial.html
+-- https://github.com/ElifUskuplu/Stlc_deBruijn
 
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Sort
+
+namespace Smallstep
 
 inductive ty : Type
 | unit : ty
@@ -17,6 +21,7 @@ inductive tm : Type
 | abs : tm → tm
 | app : tm → tm → tm
 
+-- free variable substitution
 @[simp]
 def substF (src : ℕ) (tgt : tm) : tm → tm
 | .bvar i => .bvar i
@@ -24,12 +29,18 @@ def substF (src : ℕ) (tgt : tm) : tm → tm
 | .abs t => .abs (substF src tgt t)
 | .app t₁ t₂ => .app (substF src tgt t₁) (substF src tgt t₂)
 
+example :
+  substF 0 (.fvar 1) (.abs (.app (.bvar 0) (.fvar 0))) =
+  .abs (.app (.bvar 0) (.fvar 1)) := by simp
+
 @[simp]
 def fv : (t: tm) -> Finset ℕ
 | .bvar _ => {}
 | .fvar i => {i}
 | .abs t => fv t
 | .app t₁ t₂ => fv t₁ ∪ fv t₂
+
+example : fv (.abs (.app (.bvar 0) (.fvar 0))) = {0} := by simp
 
 lemma substFresh (src : ℕ) (tgt : tm) (t: tm) (h : src ∉ fv t) :
   substF src tgt t = t := by
@@ -55,12 +66,28 @@ def openRec (src : ℕ) (tgt: tm) : tm → tm
 @[simp]
 def substB (t: tm) (tgt: tm) : tm := openRec 0 tgt t
 
+example : substB (.bvar 0) (.fvar 0) = (.fvar 0) := by simp
+example : substB
+  (.app (.abs (.app (.bvar 1) (.bvar 0))) (.bvar 0)) (.fvar 0) =
+  (.app (.abs (.app (.fvar 0) (.bvar 0))) (.fvar 0)) :=
+  by simp
+
+-- locally closed expression: no indices appearing in it are unbound
+
 inductive lc : tm → Prop
 | lc_var : ∀ x, lc (.fvar x)
 | lc_abs : ∀ (L: Finset ℕ) (t : tm),
   -- cofinite quantification
   (∀ (x : ℕ), x ∉ L → lc (substB t (.fvar x))) → lc (.abs t)
 | lc_app : ∀ t₁ t₂, lc t₁ → lc t₂ → lc (.app t₁ t₂)
+
+example : lc (.abs (.bvar 0)) := by
+  apply (lc.lc_abs {0} (.bvar 0))
+  intro x h; constructor
+
+example : lc (.abs (.fvar 0)) := by
+  apply (lc.lc_abs {0} (.fvar 0))
+  intro x h; simp; constructor
 
 lemma openRecLc' : ∀ e j v i u,
   ¬ (i = j) →
@@ -145,6 +172,9 @@ lemma substIntro (x : ℕ) u e:
 
 abbrev env := List (ℕ × ty)
 
+-- @[simp] def dom (ρ : env) : Finset ℕ := ρ.map Prod.fst |>.toFinset
+-- #eval dom [(0, .unit), (1, .arrow .unit .unit)]
+
 @[simp]
 def get (x : ℕ) : env → Option ty
 | [] => none
@@ -163,7 +193,7 @@ def inEnv(x : ℕ) : env → Prop
 | [] => False
 | (y, _) :: Γ' => x = y ∨ inEnv x Γ'
 
-lemma memDomIffInEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
+lemma memDomIffinEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
   induction Γ
   case nil => simp [Finset.not_mem_empty]
   case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
@@ -173,7 +203,7 @@ inductive envOk : env → Prop
 | envOK_cs : ∀ Γ x τ,
   envOk Γ → (¬ inEnv x Γ) → envOk ((x, τ) :: Γ)
 
-lemma bindsInEnv (x : ℕ) (τ : ty) (Γ : env) :
+lemma bindsinEnv (x : ℕ) (τ : ty) (Γ : env) :
   binds x τ Γ → inEnv x Γ := by
   intro h; induction Γ <;> simp at h
   case cons hd tl ih =>
@@ -181,7 +211,7 @@ lemma bindsInEnv (x : ℕ) (τ : ty) (Γ : env) :
   . simp [heq];
   . simp [heq]; apply ih; rw [if_neg heq] at h; assumption
 
-lemma inCtxBinds (x : ℕ) (Γ : env) :
+lemma inEnvBinds (x : ℕ) (Γ : env) :
   inEnv x Γ → exists (τ : ty), binds x τ Γ := by
   intro h; induction Γ <;> simp at h
   case cons hd tl ih =>
@@ -197,12 +227,12 @@ lemma bindsConcatOk x τ (Γ₁ Γ₂ : env) :
   case nil => simp; intros; assumption
   case cons b Γ' ih =>
     intro hbd H; cases H
-    next y τ' hctx g =>
-      simp at hctx
+    next y τ' henv g =>
+      simp at henv
       by_cases hxy : x = y
       . simp [if_pos hxy]
         by_contra; apply g
-        apply bindsInEnv y τ (Γ' ++ Γ₁)
+        apply bindsinEnv y τ (Γ' ++ Γ₁)
         rw [← hxy]; apply ih <;> assumption
       . simp [if_neg hxy]; apply ih <;> assumption
 
@@ -210,7 +240,7 @@ lemma weakeningBind Γ₁ Γ₂ Γ₃ x τ:
   binds x τ (Γ₁ ++ Γ₃) →
   envOk (Γ₁ ++ Γ₂ ++ Γ₃) →
   binds x τ (Γ₁ ++ Γ₂ ++ Γ₃) := by
-  intro hb hctx
+  intro hb henv
   induction Γ₁
   case nil => simp at *; apply bindsConcatOk; assumption; assumption
   case cons hd tl ih =>
@@ -218,9 +248,9 @@ lemma weakeningBind Γ₁ Γ₂ Γ₃ x τ:
     . simp [heq]; simp [heq] at hb; assumption
     . simp [if_neg heq]; simp at ih; apply ih;
       simp [heq] at hb; assumption;
-      cases hctx; next hctx' _ => simp at hctx'; assumption
+      cases henv; next henv' _ => simp at henv'; assumption
 
-lemma inCtxNeg x Γ1 Γ2 :
+lemma inEnvNeg x Γ1 Γ2 :
   ¬ (inEnv x (Γ1 ++ Γ2)) → ¬ (inEnv x Γ1) ∧ ¬ (inEnv x Γ2) := by
   intro h; induction Γ1
   case nil => simp; simp at h; assumption
@@ -229,27 +259,27 @@ lemma inCtxNeg x Γ1 Γ2 :
 
 lemma inEnvNegMid x y τ Γ1 Γ2 :
   ¬ (inEnv x (Γ1 ++ (y, τ) :: Γ2)) → ¬ (inEnv x (Γ1 ++ Γ2)) := by
-  intro hctx; induction Γ1 <;> simp <;> simp at hctx
-  case nil => exact hctx.2
-  case cons hd tl ih => exact ⟨hctx.1, ih hctx.2⟩
+  intro henv; induction Γ1 <;> simp <;> simp at henv
+  case nil => exact henv.2
+  case cons hd tl ih => exact ⟨henv.1, ih henv.2⟩
 
-lemma inCtxNeg' x y τ Γ1 Γ2 :
+lemma inEnvNeg' x y τ Γ1 Γ2 :
   ¬ (inEnv x (Γ1 ++ (y,τ) :: Γ2)) → x ≠ y := by
-  intro hctx; let ⟨hc1, hc2⟩ := inCtxNeg x Γ1 ((y,τ) :: Γ2) hctx;
+  intro henv; let ⟨hc1, hc2⟩ := inEnvNeg x Γ1 ((y,τ) :: Γ2) henv;
   by_contra; next heq => simp [heq] at hc2
 
 lemma bindsEqMid x τ1 τ2 Γ1 Γ2 :
   binds x τ1 (Γ2 ++ (x, τ2) :: Γ1) →
   envOk (Γ2 ++ (x, τ2) :: Γ1) →
   τ1 = τ2 := by
-  intro hbd hctx; induction Γ2
+  intro hbd henv; induction Γ2
   case nil => simp at *; symm; assumption
   case cons hd tl ih =>
-    cases hctx; next hd _ hbd' hctx' =>
+    cases henv; next hd _ hbd' henv' =>
       apply ih <;> simp at hbd';
       . by_cases heq: (x = hd);
-        . simp; simp [heq] at hbd; simp at hctx'
-          have hneq := inCtxNeg' hd x τ2 tl Γ1 hctx';
+        . simp; simp [heq] at hbd; simp at henv'
+          have hneq := inEnvNeg' hd x τ2 tl Γ1 henv';
           symm at hneq; contradiction
         . simp [if_neg, heq] at hbd; simp; assumption
       . assumption
@@ -264,14 +294,14 @@ lemma bindsNeqRemoveMid x y τ1 τ2 Γ1 Γ2 :
     . simp [hxhd] at hbd ⊢; assumption
     . simp [if_neg hxhd] at hbd ⊢; apply ih; assumption
 
-lemma ctxOkRemoveMid x τ Γ1 Γ2:
+lemma envOkRemoveMid x τ Γ1 Γ2:
   envOk (Γ2 ++ (x, τ) :: Γ1) →
   envOk (Γ2 ++ Γ1) := by
-  intro hctx; induction Γ2
-  case nil => simp; simp at hctx; cases hctx; assumption
+  intro henv; induction Γ2
+  case nil => simp; simp at henv; cases henv; assumption
   case cons hd tl ih =>
-    simp at hctx; cases hctx; next hd _ hctx' =>
-    constructor; apply ih; assumption; simp; exact (inEnvNegMid _ _ _ _ _ hctx')
+    simp at henv; cases henv; next hd _ henv' =>
+    constructor; apply ih; assumption; simp; exact (inEnvNegMid _ _ _ _ _ henv')
 
 inductive hasType : env → tm → ty → Prop
 | t_var : ∀ Γ x τ, envOk Γ → binds x τ Γ → hasType Γ (.fvar x) τ
@@ -292,33 +322,33 @@ lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : env) t τ,
   hasType (Γ₁ ++ Γ₃ ++ Γ₂) t τ := by
   intro Γ' Γ₂ Γ₃ t τ hty
   induction hty
-  case t_var Γ' x' τ' hctx bd =>
-    intros Γ₁ heq hctx'; constructor; assumption
+  case t_var Γ' x' τ' henv bd =>
+    intros Γ₁ heq henv'; constructor; assumption
     apply weakeningBind; rw [heq] at bd; assumption; assumption
   case t_abs L Γ t τ₁ τ₂ _ ih =>
-    intros Γ₁ heq hctx';
+    intros Γ₁ heq henv';
     apply hasType.t_abs (L ∪ dom (Γ₁ ++ Γ₃ ++ Γ₂))
     intro x hx; simp at hx
     apply ih x hx.1 ((x, τ₁) :: Γ₁)
     simp; assumption
     simp; apply envOk.envOK_cs; rw [<- List.append_assoc]; assumption
-    intro hctx; exact (hx.2 ((memDomIffInEnv _ _).mpr hctx))
+    intro henv; exact (hx.2 ((memDomIffinEnv _ _).mpr henv))
   case t_app Γ t1 t2 τ1 τ2 ty1 ty2 ih1 ih2 =>
-    intros Γ₁ heq hctx; apply hasType.t_app
-    exact (ih1 Γ₁ heq hctx); exact (ih2 Γ₁ heq hctx)
+    intros Γ₁ heq henv; apply hasType.t_app
+    exact (ih1 Γ₁ heq henv); exact (ih2 Γ₁ heq henv)
 
 lemma weakening' : ∀ (Γ₁ Γ₂ Γ₃ : env) t τ,
   hasType (Γ₁ ++ Γ₃) t τ →
   envOk (Γ₁ ++ Γ₂ ++ Γ₃) →
   hasType (Γ₁ ++ Γ₂ ++ Γ₃) t τ := by
-  intros Γ₁ Γ₂ Γ₃ t τ hty hctx
+  intros Γ₁ Γ₂ Γ₃ t τ hty henv
   apply weakening''; assumption; rfl; assumption
 
 lemma weakening : ∀ Γ₁ Γ₂ t τ,
   hasType Γ₂ t τ →
   envOk (Γ₁ ++ Γ₂) →
   hasType (Γ₁ ++ Γ₂) t τ := by
-  intro Γ₁ Γ₂ t τ hty hctx
+  intro Γ₁ Γ₂ t τ hty henv
   rw [<- List.nil_append (Γ₁ ++ Γ₂)]
   apply weakening' [] Γ₁ Γ₂ t τ hty
   simp; assumption
@@ -330,13 +360,13 @@ lemma typingSubstVar Γ1 Γ2 u τ1 τ2 z x:
   envOk (Γ2 ++ (z, τ2)::Γ1) →
   hasType Γ1 u τ2 →
   hasType (Γ2 ++ Γ1) (substF z u (.fvar x)) τ1 := by
-  intro bh hctx hty
+  intro bh henv hty
   simp; by_cases h: x = z
   . rw [h] at bh;
-    have heq : τ1 = τ2 := bindsEqMid z τ1 τ2 Γ1 Γ2 bh hctx;
+    have heq : τ1 = τ2 := bindsEqMid z τ1 τ2 Γ1 Γ2 bh henv;
     simp [h] at bh ⊢; rw [heq]; apply weakening; assumption
-    apply ctxOkRemoveMid; assumption
-  . rw [if_neg h]; constructor; apply ctxOkRemoveMid; assumption;
+    apply envOkRemoveMid; assumption
+  . rw [if_neg h]; constructor; apply envOkRemoveMid; assumption;
     apply bindsNeqRemoveMid; assumption; assumption
 
 lemma typingLc Γ t τ : hasType Γ t τ → lc t := by
@@ -349,9 +379,9 @@ lemma typingSubst'' Γ1 Γ2 e u τ1 τ2 x :
   hasType Γ1 u τ2 →
   hasType (Γ3 ++ Γ1) (substF x u e) τ1) := by
   intro h1; induction h1
-  case t_var Γ' x' τ' hctx bd =>
+  case t_var Γ' x' τ' henv bd =>
     intro Γ3 hg h2 h3; apply typingSubstVar; rw [hg] at bd;
-    assumption; rw [hg] at hctx; assumption; assumption
+    assumption; rw [hg] at henv; assumption; assumption
   case t_abs L Γ t τ₁ τ₂ ih1 ih2 =>
     intro Γ3 hg h2 h3; apply hasType.t_abs (L ∪ (dom (Γ3 ++ Γ1)) ∪ {x})
     intro y hyn; rw [substOpenVar]; simp at hyn; push_neg at hyn;
@@ -378,51 +408,40 @@ lemma typingSubst Γ e u τ1 τ2 x :
   intro h1 h2; rw [<- List.nil_append ((x, τ2)::Γ)] at h1;
   rw [<- List.nil_append Γ]; apply typingSubst' <;> assumption
 
--- contextual reduction
+-- reduction
 
 inductive value : tm → Prop
 | v_abs : ∀ t, lc (.abs t) → value (.abs t)
 
-inductive contract : tm → tm → Prop
-| beta : ∀ t1 t2,
-  lc (.abs t1) → value t2 → contract (.app (.abs t1) t2) (substB t1 t2)
-
-inductive ctx : (tm → tm) → Prop
-| ctx_appL : ∀ t2, ctx (λ t => .app t t2)
-| ctx_appR : ∀ t1, ctx (λ t => .app (.abs t1) t)
-
-inductive evCtx : (tm → tm) → Prop
-| evCtx_nil : evCtx id
-| evCtx_cons : ∀ k1 k2, ctx k1 -> evCtx k2 -> evCtx (k1 ∘ k2)
-
 inductive step : tm → tm → Prop
-| red : ∀ k e1 e2, evCtx k -> contract e1 e2 -> step (k e1) (k e2)
+| st_beta : ∀ t1 t2,
+  lc (.abs t1) → value t2 → step (.app (.abs t1) t2) (substB t1 t2)
+| st_app1 : ∀ t1 t1' t2,
+  lc t2 → step t1 t1' → step (.app t1 t2) (.app t1' t2)
+| st_app2 : ∀ t1 t2 t2',
+  value t1 → step t2 t2' → step (.app t1 t2) (.app t1 t2')
 
 -- preservation
 
 lemma preservation Γ t t' τ :
   hasType Γ t τ → step t t' → hasType Γ t' τ := by
-  intro _ hs; revert τ; cases hs; case red k e1 e2 evCtx' c =>
-  induction evCtx' <;> intro τ ht
-  . simp at *; cases c; case beta t1 t2 lc' vt2 =>
-    cases ht; case t_app τ ht2 ht1 =>
-    cases ht1; next L htt1' =>
-    let ⟨x, hx⟩ := pick_fresh t1 L
-    simp at hx; rw [substIntro];
-    apply typingSubst; apply htt1'; exact hx.1; assumption
-    exact hx.2; apply typingLc; assumption
-  . case evCtx_cons k1 k2 ctxK1 evCtxK2 ih =>
-    cases ctxK1 <;> cases ht with | t_app _ _ _ _ _ ht1 ht2 =>
-    simp at *; apply hasType.t_app;
-    repeat (first | apply ih | assumption)
+  intro ht hs; induction ht generalizing t'
+  case t_var => cases hs
+  case t_abs => cases hs
+  case t_app Γ t1 t2 τ1 τ2 ht1 ht2 ih1 ih2 =>
+    cases hs
+    case st_beta t1' lct1' vt2 =>
+      cases ht1; next L htt1' =>
+        let ⟨x, hx⟩ := pick_fresh t1' L
+        simp at hx; rw [substIntro];
+        apply typingSubst; apply htt1'; exact hx.1; assumption
+        exact hx.2; apply typingLc; assumption
+    case st_app1 t1' st lct2 =>
+      constructor; apply ih1; assumption; assumption
+    case st_app2 t2' st vt2 =>
+      constructor; assumption; apply ih2; assumption
 
 -- progress
-
-lemma ctxStep k e1 e2 :
-  ctx k -> step e1 e2 -> step (k e1) (k e2) := by
-  intros hctx hs; rcases hs with ⟨k', e1', e2', _, _⟩
-  apply step.red (fun x => k (k' x));
-  constructor; repeat assumption
 
 lemma progress' Γ e τ : Γ = [] → hasType Γ e τ → value e ∨ ∃ e', step e e' := by
   intro hmt ht; induction ht;
@@ -433,13 +452,12 @@ lemma progress' Γ e τ : Γ = [] → hasType Γ e τ → value e ∨ ∃ e', st
     . next vt1 =>
       cases ih2
       . next vt2 => cases vt1; next t' lct' =>
-        use (substB t' t2); apply (step.red _ _ _ evCtx.evCtx_nil);
-        constructor; assumption; assumption
+        use (substB t' t2); constructor; assumption; assumption
       . next st =>
-        rcases st with ⟨t2', st⟩; rcases vt1 with ⟨t1', _⟩
-        use (t1'.abs.app t2'); apply ctxStep; constructor; assumption
+        rcases st with ⟨t2', st⟩
+        use (.app t1 t2'); constructor; assumption; assumption
     . next st =>
       rcases st with ⟨t1', st⟩
-      use (t1'.app t2); apply ctxStep (fun x => .app x t2); constructor; assumption
+      use (.app t1' t2); constructor; apply typingLc; assumption; assumption
 
 lemma progress e τ : hasType [] e τ → value e ∨ ∃ e', step e e' := by apply progress'; simp
