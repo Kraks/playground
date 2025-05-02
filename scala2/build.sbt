@@ -14,8 +14,14 @@ lazy val root = (project in file(".")).
     name := "types",
     //libraryDependencies += scalaTest % Test,
     resolvers += Resolver.sonatypeRepo("releases"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies += "ch.epfl.data" %% "squid" % "0.4.0-SNAPSHOT",
-    addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full)
+    //libraryDependencies += "org.scala-lang.plugins" % "scala-continuations-library_2.12" % "1.0.3",
+    libraryDependencies += "org.scala-lang.plugins" %% "scala-continuations-library" % "1.0.3",
+    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
+    addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full),
+    addCompilerPlugin("org.scala-lang.plugins" % "scala-continuations-plugin_2.12.2" % "1.0.3"),
+    parallelExecution in Test := false,
+    scalacOptions += "-P:continuations:enable",
   )
+
