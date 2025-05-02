@@ -3,6 +3,8 @@ package categorial.grammars
 import scala.Conversion
 import scala.language.postfixOps
 
+// Ideas of representing test spec using natural languages
+
 case class NP[T](t: T) {
   def is(f: ADJ[T]): Boolean = f(t)
 }
