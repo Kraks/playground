@@ -93,37 +93,56 @@ given IntervalAbsDomain: AbsDomain[Interval] with
   export IntervalLattice.*
   extension (l1: Interval)
     def ▽(l2: Interval): Interval =
-      Interval.make(if (l1.lb ⊑ l2.lb) l1.lb else Double.NegativeInfinity,
-                    if (l2.ub ⊑ l1.ub) l1.ub else Double.PositiveInfinity)
+      if (l1 == bot) l2
+      else if (l2 == bot) l1
+      else Interval.make(if (l1.lb ⊑ l2.lb) l1.lb else Double.NegativeInfinity,
+                         if (l2.ub ⊑ l1.ub) l1.ub else Double.PositiveInfinity)
     def △(l2: Interval): Interval =
-      Interval.make(if (l1.lb == Double.NegativeInfinity) l2.lb else l1.lb,
-                    if (l1.ub == Double.PositiveInfinity) l2.ub else l1.ub)
+      if (l1 == bot) l2
+      else if (l2 == bot) l1
+      else Interval.make(if (l1.lb == Double.NegativeInfinity) l2.lb else l1.lb,
+                         if (l1.ub == Double.PositiveInfinity) l2.ub else l1.ub)
 
 given IntervalArith: Arith[Interval] with
+  val bot = summon[Lattice[Interval]].bot
   extension (x: Interval)
-    def +(y: Interval): Interval = Interval.make(x.lb + y.lb, x.ub + y.ub)
-    def -(y: Interval): Interval = Interval.make(x.lb - y.ub, x.ub - y.lb)
+    def +(y: Interval): Interval =
+      if (x == bot || y == bot) bot
+      else Interval.make(x.lb + y.lb, x.ub + y.ub)
+    def -(y: Interval): Interval =
+      if (x == bot || y == bot) bot
+      else Interval.make(x.lb - y.ub, x.ub - y.lb)
     def *(y: Interval): Interval =
-      val Interval(lb1, ub1) = x
-      val Interval(lb2, ub2) = y
-      val arr = List[Double](lb1 * lb2, lb1 * ub2, ub1 * lb2, ub1 * ub2)
-      Interval.make(arr.min, arr.max)
+      if (x == bot || y == bot) bot
+      else {
+        val Interval(lb1, ub1) = x
+        val Interval(lb2, ub2) = y
+        val arr = List[Double](lb1 * lb2, lb1 * ub2, ub1 * lb2, ub1 * ub2)
+        Interval.make(arr.min, arr.max)
+      }
     def /(y: Interval): Interval =
-      val rhs = y match
-        case Interval(lb2, ub2) if !(lb2 <= 0 && 0 <= ub2) =>
-          Interval.make(1/ub2, 1/lb2)
-        case Interval(lb2, 0) =>
-          Interval.make(Double.NegativeInfinity, 1/lb2)
-        case Interval(0, ub2) =>
-          Interval.make(1/ub2, Double.PositiveInfinity)
-        case  _ => Interval.make(Double.NegativeInfinity, Double.PositiveInfinity)
-      x * rhs
+      if (x == bot || y == bot) bot
+      else if (y.toConst == Some(0)) bot
+      else {
+        val rhs = y match
+          case Interval(lb2, ub2) if !(lb2 <= 0 && 0 <= ub2) =>
+            Interval.make(1/ub2, 1/lb2)
+          case Interval(lb2, 0) =>
+            Interval.make(Double.NegativeInfinity, 1/lb2)
+          case Interval(0, ub2) =>
+            Interval.make(1/ub2, Double.PositiveInfinity)
+          case  _ => Interval.make(Double.NegativeInfinity, Double.PositiveInfinity)
+        x * rhs
+      }
     def <(y: Interval): Interval = 
-      val Interval(lb1, ub1) = x
-      val Interval(lb2, ub2) = y
-      if (ub1 < lb2) Interval.from(1)
-      else if (lb1 > ub2) Interval.from(0)
-      else Interval.from(0, 1)
+      if (x == bot || y == bot) bot
+      else {
+        val Interval(lb1, ub1) = x
+        val Interval(lb2, ub2) = y
+        if (ub1 < lb2) Interval.from(1)
+        else if (lb1 > ub2) Interval.from(0)
+        else Interval.from(0, 1)
+      }
     def ≡(y: Interval): Interval = (x.toConst, y.toConst) match
       case (Some(v1), Some(v2)) =>
         if (v1 == v2) Interval.from(1) else Interval.from(0)
@@ -323,6 +342,25 @@ object Test {
   val undef = Assign("x", BinOp("+", Var("x"), Var("y")))
 
   def main(args: Array[String]): Unit = {
+    println(summon[Lattice[Interval]].bot * Interval.from(3, 4))
+    println(Interval.make(1, 10) ⊓ Interval.make(11, 15))
+    println(summon[Lattice[Interval]].bot ⊓ Interval.make(11, 15))
+    println(summon[Lattice[Interval]].bot ⊔ Interval.make(11, 15))
+    println(Interval.make(11, 15) ⊔ summon[Lattice[Interval]].bot)
+
+    println(summon[Lattice[Interval]].bot △ Interval.make(11, 15))
+    println(Interval.make(11, 15) △ summon[Lattice[Interval]].bot)
+
+    println(summon[Lattice[Interval]].bot ▽ Interval.make(11, 15))
+    println(Interval.make(11, 15) ▽ summon[Lattice[Interval]].bot)
+
+    println(Interval.make(11, 15) / Interval.from(-1, 1))
+    println(Interval.make(11, 15) / Interval.from(0))
+
+    println(summon[Lattice[Interval]].bot < Interval.from(-1, 1))
+    println(summon[Lattice[Interval]].bot < summon[Lattice[Interval]].bot)
+    println(Interval.from(-1, 1) < summon[Lattice[Interval]].bot)
+
     println(exec(powerWhile, Map("x" -> NumV(10), "b" -> NumV(2))))
 
     println(absExec(powerWhile, Map("x" -> Interval.from(10), "b" -> Interval.from(2))))
@@ -331,11 +369,8 @@ object Test {
     println(absExec(nonTerm2, Map("x" -> Interval.from(100))))
     println(absExec(nonTerm3, Map("x" -> Interval.from(100))))
     println(absExec(nonTerm3, Map("x" -> summon[Lattice[Interval]].top)))
-
     println(absExec(undef, Map("y" -> Interval.from(1))))
-
     println(absExec(condProg, Map("x" -> summon[Lattice[Interval]].top)))
-
     println(absExec(condUndef, Map()))
   }
 }
