@@ -26,4 +26,10 @@ mod tests {
     assert!(is_sorted(&v1));
   }
 
+  #[test]
+  fn ascending() {
+    let mut v2 = vec![1,2,3,4,5,6];
+    bubble_sort(&mut v2);
+    assert!(is_sorted(&v2));
+  }
 }
