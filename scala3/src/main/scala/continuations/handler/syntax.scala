@@ -71,3 +71,93 @@ val p2 = Handle(
     Let("t1", App(Var("k"), Num(2)),
     Ret(Var("t1"))),
     Return("r", Ret(Var("r")))))
+
+/*
+handle
+  let x = do eff 42
+  let y = do eff 100
+  ret (x + y)
+with
+  case eff x k =>
+    let r = k (x + 1)
+    ret r
+  return r => ret r
+*/
+val p3 = Handle(
+  Let("x", Do("eff", Num(42)),
+  Let("y", Do("eff", Num(100)),
+  Ret(Prim("+", Var("x"), Var("y"))))),
+  Op("eff", "x", "k",
+    Let("r", App(Var("k"), Prim("+", Var("x"), Num(1))),
+      Ret(Var("r"))),
+    Return("r", Ret(Var("r")))))
+
+/*
+handle
+  let x = do add1 10
+  let y = do mul2 20
+  ret (x + y)
+with
+  case add1 x k =>
+    let r = k (x + 1)
+    ret r
+  case mul2 x k =>
+    let r = k (x * 2)
+    ret r
+  return r => ret r
+*/
+val p4 = Handle(
+  Let("x", Do("add1", Num(10)),
+  Let("y", Do("mul2", Num(20)),
+  Ret(Prim("+", Var("x"), Var("y"))))),
+  Op("add1", "x", "k",
+    Let("r", App(Var("k"), Prim("+", Var("x"), Num(1))),
+      Ret(Var("r"))),
+  Op("mul2", "x", "k",
+    Let("r", App(Var("k"), Prim("*", Var("x"), Num(2))),
+      Ret(Var("r"))),
+  Return("r", Ret(Var("r"))))))
+
+/*
+handle
+  handle
+    let x = do add1 10
+    let y = do mul2 20
+    ret (x + y)
+  with
+    case add1 x k =>
+      let r = k (x + 1)
+      ret r
+    return r => ret r
+with
+  case mul2 x k =>
+    let r = k (x * 2)
+    ret r
+  return r => ret r
+*/
+val p5 = Handle(
+  Handle(
+    Let("x", Do("add1", Num(10)),
+    Let("y", Do("mul2", Num(20)),
+    Ret(Prim("+", Var("x"), Var("y"))))),
+    Op("add1", "x", "k",
+      Let("r", App(Var("k"), Prim("+", Var("x"), Num(1))),
+        Ret(Var("r"))),
+      Return("r", Ret(Var("r"))))),
+  Op("mul2", "x", "k",
+    Let("r", App(Var("k"), Prim("*", Var("x"), Num(2))),
+      Ret(Var("r"))),
+    Return("r", Ret(Var("r")))))
+
+/*
+handle
+  let x = do eff 0
+  ret (x * 2)
+with
+  case eff x k => ret 42
+  return r => ret r
+*/
+val p6 = Handle(
+  Let("x", Do("eff", Num(0)),
+    Ret(Prim("*", Var("x"), Num(2)))),
+  Op("eff", "x", "k", Ret(Num(42)), Return("r", Ret(Var("r")))))

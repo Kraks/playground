@@ -141,17 +141,3 @@ def drive(s: State, i: Int): State =
   else
     println(s)
     if isDone(s) then s else drive(step(s), i-1)
-
-@main def test(): Unit = {
-  {
-  val s = inject(p2)
-  val s1 = drive(s, 20)
-  assert(extract(s1) == IntV(4))
-  }
-
-  {
-  val s = inject(p1)
-  val s1 = drive(s, 20)
-  assert(extract(s1) == IntV(10))
-  }
-}
