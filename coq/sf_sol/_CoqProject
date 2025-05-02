@@ -1,0 +1,21 @@
+-R . Top
+Basics.v
+Equiv.v
+Hoare.v
+Imp.v
+IndProp.v
+Induction.v
+Lists.v
+Logic.v
+Maps.v
+NewMaps.v
+Midterm.v
+Poly.v
+ProofObject.v
+Rel.v
+Tactics.v
+Smallstep.v
+Types.v
+Stlc.v
+StlcProp.v
+Sub.v
