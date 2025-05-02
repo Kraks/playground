@@ -163,49 +163,49 @@ lemma substFClosedBComm: ∀ t Δ n,
 def binds x τ (Γ : tenv) := (indexr x Γ = some τ)
 
 inductive hasType : tenv → tm → ty → Prop
-| t_var : ∀ Γ x τ, binds x τ Γ → hasType Γ (.fvar x) τ
-| t_abs : ∀ Γ t τ₁ τ₂,
+| var : ∀ Γ x τ, binds x τ Γ → hasType Γ (.fvar x) τ
+| abs : ∀ Γ t τ₁ τ₂,
   hasType (τ₁::Γ) (openSubst t 0 (.fvar Γ.length)) τ₂ →
   closedF t Γ.length →
   hasType Γ (.abs t) (ty.arrow τ₁ τ₂)
-| t_app : ∀ Γ t₁ t₂ τ₁ τ₂,
+| app : ∀ Γ t₁ t₂ τ₁ τ₂,
   hasType Γ t₁ (.arrow τ₁ τ₂) →
   hasType Γ t₂ τ₁ →
   hasType Γ (.app t₁ t₂) τ₂
 
 inductive value : tm → Prop
-| v_abs : ∀ t, value (.abs t)
+| abs : ∀ t, value (.abs t)
 
 inductive step : tm → tm → Prop
-| st_beta : ∀ t v,
+| beta : ∀ t v,
   value v →
   step (.app (.abs t) v) (openSubst t 0 v)
-| st_app1 : ∀ t1 t1' t2,
+| app1 : ∀ t1 t1' t2,
   step t1 t1' →
   step (.app t1 t2) (.app t1' t2)
-| st_app2 : ∀ t1 t2 t2',
+| app2 : ∀ t1 t2 t2',
   step t2 t2' →
   step (.app t1 t2) (.app t1 t2')
 
 inductive stepn : tm → tm → Prop
-| stepn_refl : ∀ t, stepn t t
-| stepn_multi : ∀ t1 t2 t3, stepn t1 t2 → step t2 t3 → stepn t1 t3
+| refl : ∀ t, stepn t t
+| multi : ∀ t1 t2 t3, stepn t1 t2 → step t2 t3 → stepn t1 t3
 
 lemma stepnApp1 : ∀ t1 t1' t2, stepn t1 t1' → stepn (.app t1 t2) (.app t1' t2) := by
   intros t1 t1' t2 h; induction h
   . constructor
-  . case _ hstn hst ih => constructor; assumption; apply step.st_app1; assumption
+  . case _ hstn hst ih => constructor; assumption; apply step.app1; assumption
 
 lemma stepnApp2 : ∀ t1 t2 t2', stepn t2 t2' → stepn (.app t1 t2) (.app t1 t2') := by
   intros t1 t2 t2' h; induction h
   . constructor
-  . case _ hstn hst ih => constructor; assumption; apply step.st_app2; assumption
+  . case _ hstn hst ih => constructor; assumption; apply step.app2; assumption
 
 lemma stepnTrans : ∀ t1 t2 t3, stepn t1 t2 → stepn t2 t3 → stepn t1 t3 := by
   intros t1 t2 t3 h1 h2; induction h2
   . assumption
   . case _ _ _ hstn hst ih =>
-    apply stepn.stepn_multi; apply ih; assumption
+    apply stepn.multi; apply ih; assumption
 
 @[simp]
 def valType : tm → ty → Prop
@@ -216,7 +216,7 @@ def valType : tm → ty → Prop
 
 lemma valTypeValue : ∀ t τ, valType t τ → value t := by
   intros t τ h; cases t <;> try simp at h
-  next t => apply value.v_abs
+  next t => apply value.abs
 
 @[simp]
 def expType (t : tm) (τ : ty) : Prop := ∃ v, stepn t v ∧ closedB v 0 ∧ valType v τ
@@ -279,8 +279,8 @@ lemma semApp: ∀ Γ f t τ1 τ2,
     apply stepnTrans; apply stepnApp1; assumption
     apply stepnTrans; apply stepnApp2; assumption
     have stbeta : step (ft.abs.app tv) (openSubst ft 0 tv) :=
-      by apply step.st_beta; apply valTypeValue; assumption
-    apply stepnTrans; apply stepn.stepn_multi; apply stepn.stepn_refl
+      by apply step.beta; apply valTypeValue; assumption
+    apply stepnTrans; apply stepn.multi; apply stepn.refl
     apply stbeta; apply v2st;
   . assumption
 
@@ -291,7 +291,7 @@ lemma semAbs: ∀ Γ t τ1 τ2,
   intros Γ t τ1 τ2 hsemt hclosed Δ hcl henv
   exists (substF Δ (.abs t))
   apply And.intro
-  . apply stepn.stepn_refl
+  . apply stepn.refl
   . simp at hcl; have hcl' := openClosed' t (Γ.length) 0 hcl
     apply And.intro
     . simp; apply substFClosedBComm _ _ _ (envTypeClosed Δ Γ henv) hcl
@@ -309,14 +309,14 @@ lemma semAbs: ∀ Γ t τ1 τ2,
 
 lemma fundamental : ∀ Γ t τ, hasType Γ t τ → semType Γ t τ := by
   intros Γ t τ h; induction h
-  case t_var => apply semVar; assumption
-  case t_abs => apply semAbs <;> assumption
-  case t_app => apply semApp <;> assumption
+  case var => apply semVar; assumption
+  case abs => apply semAbs <;> assumption
+  case app => apply semApp <;> assumption
 
 lemma hasTypeClosed : ∀ Γ t τ, hasType Γ t τ → closedB t 0 := by
   intros Γ t τ h; induction h <;> simp
-  case t_abs => apply openClosed; assumption
-  case t_app => apply And.intro <;> assumption
+  case abs => apply openClosed; assumption
+  case app => apply And.intro <;> assumption
 
 lemma substFMt: ∀ t, substF [] t = t := by
   intros t; induction t <;> simp
