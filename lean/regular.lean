@@ -45,6 +45,7 @@ instance : Repr Expr where
   | Sum.inr b => reprPrec b n
 -/
 
+open Op
 open AExpr
 open BExpr
 open Stmt
@@ -61,7 +62,20 @@ open Value
 def aeval (e : AExpr) (σ : Store): Option Value := match e with
 | ENat n => NatV n
 | EVar x => σ x
-| EBinOp op e₁ e₂ => sorry
+| EBinOp op e₁ e₂ =>
+  match op with
+  | Plus =>
+    (match (aeval e₁ σ, aeval e₂ σ) with
+    | (some (NatV v1), some (NatV v2)) => some (NatV (v1 + v2))
+    | _ => none)
+  | Mult =>
+    match (aeval e₁ σ, aeval e₂ σ) with
+    | (some (NatV v1), some (NatV v2)) => some (NatV (v1 * v2))
+    | _ => none
+  | Minus =>
+    match (aeval e₁ σ, aeval e₂ σ) with
+    | (some (NatV v1), some (NatV v2)) => some (NatV (v1 - v2))
+    | _ => none
 
 def beval (b : BExpr) (σ : Store): Option Value := match b with
 | BLess e₁ e₂ =>
