@@ -30,12 +30,24 @@ def openSubst (t1: tm) (n: ℕ) (t2: tm) : tm :=
   | .fls | .tru => t1
   | .bvar x =>
     if x = n then t2
-    else if n < x then .bvar (x - 1)
+    -- else if n < x then .bvar (x - 1)
     else .bvar x
   | .fvar x => .fvar x
   | .abs t1 => .abs (openSubst t1 (n + 1) t2)
   | .app t11 t12 =>
     .app (openSubst t11 n t2) (openSubst t12 n t2)
+
+@[simp]
+def close (t1: tm) (n: ℕ) (m: ℕ) : tm :=
+  match t1 with
+  | .fls | .tru => t1
+  | .bvar x => .bvar x
+  | .fvar x => if x = n then (.bvar m) else t1
+  | .abs t1 => .abs (close t1 n (m + 1))
+  | .app t11 t12 =>
+    .app (close t11 n m) (close t12 n m)
+
+example : (tm.abs (close (.abs (.fvar 0)) 0 0)) = (.abs (.abs (.bvar 1))) := by simp
 
 @[simp]
 def substF (Δ: venv) (t: tm) : tm :=
@@ -89,9 +101,7 @@ lemma openClosed': ∀ t n m,
   case bvar x =>
     by_cases hx: (x = m)
     . simp [hx]
-    . rw [if_neg hx]; by_cases hx': (m < x)
-      . simp at h; omega
-      . rw [if_neg hx']; simp; omega
+    . rw [if_neg hx]; simp at h; simp; omega
   case abs t ih =>
     apply ih n (m+1); simp at h; assumption
   case app t1 t2 ih1 ih2 =>
@@ -100,12 +110,7 @@ lemma openClosed': ∀ t n m,
 lemma closedBOpenId: ∀ t1 t2 n,
   closedB t1 n -> openSubst t1 n t2 = t1 := by
   intros t1; induction t1 <;> intros t2 n h <;> simp
-  case bvar x =>
-    by_cases hx: (x = n)
-    . simp at h; omega
-    . rw [if_neg hx]; by_cases hx': (n < x)
-      . simp at h; omega
-      . simp [if_neg hx']
+  case bvar x => intros hxn; simp at h; omega
   case abs t ih => simp at h; apply ih; assumption
   case app t1 t2 ih1 ih2 =>
     apply And.intro
@@ -130,9 +135,7 @@ lemma substFOpenComm : ∀ t t1 Δ n, closedF t Δ.length →
   case bvar x =>
     by_cases hx: (x = n)
     . simp [hx]
-    . rw [if_neg hx]; rw [if_neg hx]
-      by_cases hx': (n < x)
-      simp [hx']; rw [if_neg hx']; simp
+    . rw [if_neg hx]; rw [if_neg hx]; simp;
   case fvar x =>
     have h' := indexrSome Δ x h
     rcases h' with ⟨v, hidx⟩; rw [hidx]; simp;
@@ -214,17 +217,6 @@ lemma stepnTrans : ∀ t1 t2 t3, stepn t1 t2 → stepn t2 t3 → stepn t1 t3 := 
   . case _ _ _ hstn hst ih =>
     apply stepn.multi; apply ih; assumption
 
-inductive ctxType : (tm → tm) → tenv → ty → tenv → ty → Prop
-| root : ∀ Γ τ, ctxType id Γ τ Γ τ
-| app1 : ∀ Γ τ1 τ2 t2,
-  hasType Γ t2 τ1 →
-  ctxType (λ t1 => .app t1 t2) Γ (.arrow τ1 τ2) Γ τ2
-| app2 : ∀ Γ τ1 τ2 t1,
-  hasType Γ t1 (.arrow τ1 τ2) →
-  ctxType (λ t2 => .app t1 t2) Γ τ1 Γ τ2
-| abs : ∀ Γ τ1 τ2,
-  ctxType (λ t => .abs t) (τ1::Γ) τ2 Γ (.arrow τ1 τ2)
-
 @[simp]
 def valType (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
   match t1, t2, τ with
@@ -268,6 +260,14 @@ lemma envTypeExtend : ∀ Δ1 Δ2 Γ v1 v2 τ,
   closedB v1 0 → closedB v2 0 →
   valType v1 v2 τ →
   envType (v1::Δ1) (v2::Δ2) (τ::Γ) := by sorry
+  /--
+  intros Δ1 Δ2 Γ v1 v2 τ henv hclv1 hclv2 hv12
+  constructor; simp; apply henv.1
+  constructor; simp; apply henv.2.1
+  intros τ' x hbd; rcases henv with ⟨_, _, h⟩
+  by_cases hx: (x = Δ1.length)
+  .
+  --/
 
 lemma envTypeClosed : ∀ Δ1 Δ2 Γ, envType Δ1 Δ2 Γ →
   (∀ x t1, indexr x Δ1 = some t1 → closedB t1 0) ∧
@@ -372,3 +372,43 @@ theorem safety : ∀ t τ, hasType [] t τ → expType t t τ := by
   exists v1; rw [substFMt] at hst1; constructor; assumption
   exists v2; rw [substFMt] at hst2; constructor; assumption
   exact ⟨hcl1, hcl2, hval⟩
+
+inductive ctxType : (tm → tm) → tenv → ty → tenv → ty → Prop
+| root : ∀ Γ τ, ctxType id Γ τ Γ τ
+| app1 : ∀ Γ τ1 τ2 t2,
+  hasType Γ t2 τ1 →
+  ctxType (λ t1 => .app t1 t2) Γ (.arrow τ1 τ2) Γ τ2
+| app2 : ∀ Γ τ1 τ2 t1,
+  hasType Γ t1 (.arrow τ1 τ2) →
+  ctxType (λ t2 => .app t1 t2) Γ τ1 Γ τ2
+| abs : ∀ Γ τ1 τ2,
+  -- t is an opened term, referring to a free variable (.fvar Γ.length)
+  ctxType (λ t => .abs (close t Γ.length 0)) (τ1::Γ) τ2 Γ (.arrow τ1 τ2)
+
+lemma openCloseId : ∀ t n k, closedB t k → (openSubst (close t n k) k (tm.fvar n)) = t := by
+  intros t; induction t <;> intros n k hcl <;> simp;
+  . case bvar x => simp at hcl; omega
+  . case fvar x => by_cases hx: (x = n); simp [hx]; simp [if_neg hx]
+  . case abs t ih => apply ih; exact hcl
+  . case app t1 t2 ih1 ih2 =>
+    simp at hcl; apply And.intro
+    . apply ih1; exact hcl.1
+    . apply ih2; exact hcl.2
+
+theorem congruence : ∀ C Γ1 τ1 Γ2 τ2,
+  ctxType C Γ1 τ1 Γ2 τ2 →
+  ∀ t1 t2,
+  closedB t1 0 → closedB t2 0 →
+  semType Γ1 t1 t2 τ1 → semType Γ2 (C t1) (C t2) τ2 :=
+by
+  intros C Γ1 τ1 Γ2 τ2 hctx
+  induction hctx <;> intros t1 t2 hcl1 hcl2 hsem
+  . case root _ _ => apply hsem
+  . case app1 Γ τ1' τ2' t2' htyt2' =>
+    apply semApp; apply hsem; apply fundamental; assumption
+  . case app2 Γ τ1' τ2' t1' htyt1' =>
+    apply semApp; apply fundamental; assumption; apply hsem
+  . case abs Γ τ1' τ2' =>
+    apply semAbs; rw [openCloseId]; rw [openCloseId]
+    assumption; assumption; assumption;
+    sorry; sorry -- closedF condition missing

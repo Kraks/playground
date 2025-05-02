@@ -328,3 +328,9 @@ theorem safety : ∀ t τ, hasType [] t τ → expType t τ := by
   simp at h'; rcases h' (hasTypeClosed _ _ _ h) with ⟨v, hst, hval⟩
   simp; exists v; rw [substFMt] at hst;
   apply And.intro <;> assumption
+
+theorem termination : ∀ t τ, hasType [] t τ → ∃ v, stepn t v ∧ value v := by
+  intros t τ h; have h' := fundamental _ _ _ h
+  simp at h'; rcases h' (hasTypeClosed _ _ _ h) with ⟨v, hst, hval⟩
+  exists v; rw [substFMt] at hst;
+  apply And.intro; assumption; exact (valTypeValue _ _ hval.2)
