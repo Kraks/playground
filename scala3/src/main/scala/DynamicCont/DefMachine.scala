@@ -1,5 +1,5 @@
 package dynamic.continuation
-
+package definition.machine
 // A Dynamic Continuation-Passing Style for Dynamic Delimited Continuations
 // https://dl.acm.org/doi/pdf/10.1145/2794078
 
@@ -11,6 +11,7 @@ enum Term:
   case App(e1: Term, e2: Term)
   case Prompt(e: Term)
   case Control(x: String, e: Term)
+  case Shift(x: String, e: Term)
 
 type Env = Map[String, Value]
 
@@ -58,6 +59,7 @@ def step(s: CState): State = s match {
   case CState(Arg(e, ρ, κ), v, γ) => EState(e, ρ, Fun(v, κ), γ)
   case CState(Fun(Clo(x, e, ρ), κ), v, γ) => EState(e, ρ + (x -> v), κ, γ)
   case CState(Fun(Cont(κ1), κ2), v, γ) => CState(κ1 ★ κ2, v, γ)
+  case CState(Fun(Cont(κ1), κ2), v, γ) => CState(κ1, v, κ2 :: γ)
 }
 
 def step(s: MState): CState | Value = s match {
