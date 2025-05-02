@@ -1,4 +1,6 @@
--- STLC + locally nameless with cofinite quantification + contextual reduction semantics
+-- STLC
+-- locally nameless with cofinite quantification
+-- call-by-value contextual reduction semantics
 
 -- Based on the base version
 

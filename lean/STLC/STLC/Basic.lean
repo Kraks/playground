@@ -1,4 +1,6 @@
--- STLC + locally nameless with cofinite quantification
+-- STLC
+-- locally nameless with cofinite quantification
+-- call-by-value small-step semantics
 
 -- Roughly following the following materials:
 -- https://www.cis.upenn.edu/~plclub/popl08-tutorial/code/coqdoc/STLC_Tutorial.html
