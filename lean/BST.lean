@@ -61,7 +61,15 @@ inductive ForallTree (p : Nat → β → Prop) : Tree β → Prop
 | node : ForallTree p left ->
          p key value ->
          ForallTree p right ->
-         ForallTree p (.node left key value righ)
+         ForallTree p (.node left key value right)
+
+inductive BST : Tree β → Prop
+| leaf : BST .leaf
+| node : ForallTree (fun k v => k < key) left ->
+         ForallTree (fun k v => key < k) right ->
+         BST left ->
+         BST right ->
+         BST (.node left key value right)
 
 local macro "have_eq " lhs:term:max rhs:term:max : tactic =>
   `(tactic|
@@ -89,4 +97,3 @@ theorem Tree.forall_insert_of_forall
      . exact .node hl hp ihr
      . have_eq key k
        exact .node hl h₂ hr
-
