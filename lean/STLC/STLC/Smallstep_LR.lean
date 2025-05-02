@@ -21,12 +21,14 @@ abbrev tenv := List ty
 abbrev venv := List tm
 
 -- combine open and subst: t1[n ↦ t2]
+-- λx.λy.(x y)  |  λ.λ.(1 0)
+-- λx.[λy.(x y)][y↦t] = λx.(x t)  |  λ.[λ.(1 0)][0↦t] = λ.(0 t)
 @[simp]
 def openSubst (t1: tm) (n: ℕ) (t2: tm) : tm :=
   match t1 with
   | .bvar x =>
     if x = n then t2
-    else if n < x then .bvar (x - 1)
+    else if n < x then .bvar (x - 1) -- if we substitute under binders
     else .bvar x
   | .fvar x => .fvar x
   | .abs t1 => .abs (openSubst t1 (n + 1) t2)

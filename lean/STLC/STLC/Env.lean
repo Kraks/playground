@@ -27,3 +27,6 @@ lemma indexrSome' : ∀ {A} (xs : List A) i,
 
 lemma indexrHead : ∀ {A} (x : A) (xs : List A),
   indexr xs.length (x :: xs) = some x := by intros A x xs; simp
+
+lemma indexrNone : ∀ {A} (xs : List A) i,
+  i >= xs.length -> indexr i xs = none := by sorry
