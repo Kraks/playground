@@ -1,3 +1,5 @@
+-- Chapter 2
+
 -- Simple type theory
 
 def m: Nat := 1
