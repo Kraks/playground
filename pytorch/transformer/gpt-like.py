@@ -30,6 +30,7 @@ n_layer = 6
 dropout = 0.2
 
 # some better hyperparameters:
+"""
 eval_interval = 100
 max_iters = 5000
 learning_rate=3e-4
@@ -38,6 +39,7 @@ block_size = 256
 n_embd = 300
 n_layer = 10
 dropout = 0.2
+"""
 
 ## Tokenization
 
@@ -203,7 +205,7 @@ class GPTlite(nn.Module):
     self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
     self.position_embedding_table = nn.Embedding(block_size, n_embd)
     #sequence of attention heads and feed forward layers
-    self.blocks = nn.Sequential( *[Block(n_embd, n_head) for _ in range(n_layer)])
+    self.blocks = nn.Sequential( *[Block(n_embd, n_head) for _ in range(n_layer)] )
     #one layer normalization layer after transformer blocks
     #and one before linear layer that outputs the vocabulary
     self.ln = nn.LayerNorm(n_embd)
@@ -279,5 +281,6 @@ print(idx)
 print("Output:")
 print(decode(m.generate(idx, max_new_tokens=500).tolist()[0]))
 
+# This works well with Python 3.13 and Pytorch 2.6
 onnx_program = torch.onnx.dynamo_export(m, idx)
 onnx_program.save("gpt.onnx")
