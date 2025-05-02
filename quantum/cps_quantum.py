@@ -27,8 +27,8 @@ class State:
   p: float
   bs: tuple[bool]
   def isSet(self, x: Exp) -> bool:
-    if isinstance(x, int): return self.bs[x]
-    return x
+    if isinstance(x, bool): return x
+    return self.bs[x]
 
 def neg(bs: tuple[bool], x: int) -> tuple[bool]:
   ls = list(bs)
@@ -37,7 +37,8 @@ def neg(bs: tuple[bool], x: int) -> tuple[bool]:
 
 def evalGate(g: Gate, s: State, k: Callable[[State], None]) -> None:
   if isinstance(g, CCX):
-    if s.isSet(g.x) and s.isSet(g.y): k(State(s.p, neg(s.bs, g.z)))
+    if s.isSet(g.x) and s.isSet(g.y):
+      k(State(s.p, neg(s.bs, g.z)))
     else: k(s)
   if isinstance(g, H):
     if s.isSet(g.x):
@@ -62,5 +63,5 @@ def runCircuit(c: Circuit, s: State) -> None:
 #######################
 
 bell = [H(0), CCX(True, 0, 1)]
-runCircuit(bell, State(1.0, (True, True)))
+runCircuit(bell, State(1.0, (False, False)))
 print(summary)

@@ -112,13 +112,13 @@ s.NOT(0)
 s.NOT(1)
 s.AND(0)
 
-print(s.state)
+#print(s.state)
 
 # an EPR pair
 s = QState(2)
 s.H(0)
 s.CNOT(0)
-s.s(0)
-s.t(0)
+#s.s(0)
+#s.t(0)
 
 print(s.state)
