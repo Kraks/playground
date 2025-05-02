@@ -141,46 +141,46 @@ lemma substIntro (x : ℕ) u e:
   intro hx hlc; simp; rw [substOpenRec]; simp;
   rw [substFresh]; assumption; assumption
 
-abbrev ctx := List (ℕ × ty)
+abbrev env := List (ℕ × ty)
 
 @[simp]
-def get (x : ℕ) : ctx → Option ty
+def get (x : ℕ) : env → Option ty
 | [] => none
 | (y , S) :: Γ' => if x = y then some S else get x Γ'
 
 @[simp]
-def dom : ctx → (Finset ℕ)
+def dom : env → (Finset ℕ)
 | [] => ∅
 | ((x, _) :: Γ') => {x} ∪ (dom Γ')
 
 @[simp]
-def binds x T (Γ : ctx) := (get x Γ = some T)
+def binds x T (Γ : env) := (get x Γ = some T)
 
 @[simp]
-def inCtx (x : ℕ) : ctx → Prop
+def inEnv(x : ℕ) : env → Prop
 | [] => False
-| (y, _) :: Γ' => x = y ∨ inCtx x Γ'
+| (y, _) :: Γ' => x = y ∨ inEnv x Γ'
 
-lemma memDomIffInCtx(a : ℕ) (Γ : ctx) : a ∈ dom Γ ↔ inCtx a Γ := by
+lemma memDomIffInEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
   induction Γ
   case nil => simp [Finset.not_mem_empty]
   case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
 
-inductive ctxOk : ctx → Prop
-| ctxOK_mt : ctxOk []
+inductive envOk : env → Prop
+| ctxOK_mt : envOk []
 | ctxOK_cs : ∀ Γ x τ,
-  ctxOk Γ → (¬ inCtx x Γ) → ctxOk ((x, τ) :: Γ)
+  envOk Γ → (¬ inEnv x Γ) → envOk ((x, τ) :: Γ)
 
-lemma bindsInCtx (x : ℕ) (τ : ty) (Γ : ctx) :
-  binds x τ Γ → inCtx x Γ := by
+lemma bindsInEnv (x : ℕ) (τ : ty) (Γ : env) :
+  binds x τ Γ → inEnv x Γ := by
   intro h; induction Γ <;> simp at h
   case cons hd tl ih =>
   by_cases heq: (x = hd.1)
   . simp [heq];
   . simp [heq]; apply ih; rw [if_neg heq] at h; assumption
 
-lemma inCtxBinds (x : ℕ) (Γ : ctx) :
-  inCtx x Γ → exists (τ : ty), binds x τ Γ := by
+lemma inCtxBinds (x : ℕ) (Γ : env) :
+  inEnv x Γ → exists (τ : ty), binds x τ Γ := by
   intro h; induction Γ <;> simp at h
   case cons hd tl ih =>
     by_cases heq: (x = hd.1)
@@ -189,8 +189,8 @@ lemma inCtxBinds (x : ℕ) (Γ : ctx) :
       . contradiction
       . apply ih h
 
-lemma bindsConcatOk x τ (Γ₁ Γ₂ : ctx) :
-  binds x τ Γ₁ -> ctxOk (Γ₂ ++ Γ₁) -> binds x τ (Γ₂ ++ Γ₁) := by
+lemma bindsConcatOk x τ (Γ₁ Γ₂ : env) :
+  binds x τ Γ₁ -> envOk (Γ₂ ++ Γ₁) -> binds x τ (Γ₂ ++ Γ₁) := by
   induction Γ₂
   case nil => simp; intros; assumption
   case cons b Γ' ih =>
@@ -200,13 +200,13 @@ lemma bindsConcatOk x τ (Γ₁ Γ₂ : ctx) :
       by_cases hxy : x = y
       . simp [if_pos hxy]
         by_contra; apply g
-        apply bindsInCtx y τ (Γ' ++ Γ₁)
+        apply bindsInEnv y τ (Γ' ++ Γ₁)
         rw [← hxy]; apply ih <;> assumption
       . simp [if_neg hxy]; apply ih <;> assumption
 
 lemma weakeningBind Γ₁ Γ₂ Γ₃ x τ:
   binds x τ (Γ₁ ++ Γ₃) →
-  ctxOk (Γ₁ ++ Γ₂ ++ Γ₃) →
+  envOk (Γ₁ ++ Γ₂ ++ Γ₃) →
   binds x τ (Γ₁ ++ Γ₂ ++ Γ₃) := by
   intro hb hctx
   induction Γ₁
@@ -219,26 +219,26 @@ lemma weakeningBind Γ₁ Γ₂ Γ₃ x τ:
       cases hctx; next hctx' _ => simp at hctx'; assumption
 
 lemma inCtxNeg x Γ1 Γ2 :
-  ¬ (inCtx x (Γ1 ++ Γ2)) → ¬ (inCtx x Γ1) ∧ ¬ (inCtx x Γ2) := by
+  ¬ (inEnv x (Γ1 ++ Γ2)) → ¬ (inEnv x Γ1) ∧ ¬ (inEnv x Γ2) := by
   intro h; induction Γ1
   case nil => simp; simp at h; assumption
   case cons hd tl ih =>
     simp; simp at h; exact ⟨⟨h.1, (ih h.2).1⟩, (ih h.2).2⟩
 
-lemma inCtxNegMid x y τ Γ1 Γ2 :
-  ¬ (inCtx x (Γ1 ++ (y, τ) :: Γ2)) → ¬ (inCtx x (Γ1 ++ Γ2)) := by
+lemma inEnvNegMid x y τ Γ1 Γ2 :
+  ¬ (inEnv x (Γ1 ++ (y, τ) :: Γ2)) → ¬ (inEnv x (Γ1 ++ Γ2)) := by
   intro hctx; induction Γ1 <;> simp <;> simp at hctx
   case nil => exact hctx.2
   case cons hd tl ih => exact ⟨hctx.1, ih hctx.2⟩
 
 lemma inCtxNeg' x y τ Γ1 Γ2 :
-  ¬ (inCtx x (Γ1 ++ (y,τ) :: Γ2)) → x ≠ y := by
+  ¬ (inEnv x (Γ1 ++ (y,τ) :: Γ2)) → x ≠ y := by
   intro hctx; let ⟨hc1, hc2⟩ := inCtxNeg x Γ1 ((y,τ) :: Γ2) hctx;
   by_contra; next heq => simp [heq] at hc2
 
 lemma bindsEqMid x τ1 τ2 Γ1 Γ2 :
   binds x τ1 (Γ2 ++ (x, τ2) :: Γ1) →
-  ctxOk (Γ2 ++ (x, τ2) :: Γ1) →
+  envOk (Γ2 ++ (x, τ2) :: Γ1) →
   τ1 = τ2 := by
   intro hbd hctx; induction Γ2
   case nil => simp at *; symm; assumption
@@ -263,16 +263,16 @@ lemma bindsNeqRemoveMid x y τ1 τ2 Γ1 Γ2 :
     . simp [if_neg hxhd] at hbd ⊢; apply ih; assumption
 
 lemma ctxOkRemoveMid x τ Γ1 Γ2:
-  ctxOk (Γ2 ++ (x, τ) :: Γ1) →
-  ctxOk (Γ2 ++ Γ1) := by
+  envOk (Γ2 ++ (x, τ) :: Γ1) →
+  envOk (Γ2 ++ Γ1) := by
   intro hctx; induction Γ2
   case nil => simp; simp at hctx; cases hctx; assumption
   case cons hd tl ih =>
     simp at hctx; cases hctx; next hd _ hctx' =>
-    constructor; apply ih; assumption; simp; exact (inCtxNegMid _ _ _ _ _ hctx')
+    constructor; apply ih; assumption; simp; exact (inEnvNegMid _ _ _ _ _ hctx')
 
-inductive hasType : ctx → tm → ty → Prop
-| t_var : ∀ Γ x τ, ctxOk Γ → binds x τ Γ → hasType Γ (.fvar x) τ
+inductive hasType : env → tm → ty → Prop
+| t_var : ∀ Γ x τ, envOk Γ → binds x τ Γ → hasType Γ (.fvar x) τ
 | t_abs : ∀ (L : Finset ℕ) Γ t τ₁ τ₂,
   (∀ (x: ℕ), x ∉ L → hasType ((x, τ₁)::Γ) (substB t (.fvar x)) τ₂) →
   hasType Γ (.abs t) (ty.arrow τ₁ τ₂)
@@ -283,10 +283,10 @@ inductive hasType : ctx → tm → ty → Prop
 
 -- weakening of typing
 
-lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : ctx) t τ,
+lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : env) t τ,
   hasType Γ' t τ →
-  (Γ₁ : ctx) → Γ' = Γ₁ ++ Γ₂ →
-  ctxOk (Γ₁ ++ Γ₃ ++ Γ₂) →
+  (Γ₁ : env) → Γ' = Γ₁ ++ Γ₂ →
+  envOk (Γ₁ ++ Γ₃ ++ Γ₂) →
   hasType (Γ₁ ++ Γ₃ ++ Γ₂) t τ := by
   intro Γ' Γ₂ Γ₃ t τ hty
   induction hty
@@ -299,22 +299,22 @@ lemma weakening'' : ∀ (Γ' Γ₂ Γ₃ : ctx) t τ,
     intro x hx; simp at hx
     apply ih x hx.1 ((x, τ₁) :: Γ₁)
     simp; assumption
-    simp; apply ctxOk.ctxOK_cs; rw [<- List.append_assoc]; assumption
-    intro hctx; exact (hx.2 ((memDomIffInCtx _ _).mpr hctx))
+    simp; apply envOk.ctxOK_cs; rw [<- List.append_assoc]; assumption
+    intro hctx; exact (hx.2 ((memDomIffInEnv _ _).mpr hctx))
   case t_app Γ t1 t2 τ1 τ2 ty1 ty2 ih1 ih2 =>
     intros Γ₁ heq hctx; apply hasType.t_app
     exact (ih1 Γ₁ heq hctx); exact (ih2 Γ₁ heq hctx)
 
-lemma weakening' : ∀ (Γ₁ Γ₂ Γ₃ : ctx) t τ,
+lemma weakening' : ∀ (Γ₁ Γ₂ Γ₃ : env) t τ,
   hasType (Γ₁ ++ Γ₃) t τ →
-  ctxOk (Γ₁ ++ Γ₂ ++ Γ₃) →
+  envOk (Γ₁ ++ Γ₂ ++ Γ₃) →
   hasType (Γ₁ ++ Γ₂ ++ Γ₃) t τ := by
   intros Γ₁ Γ₂ Γ₃ t τ hty hctx
   apply weakening''; assumption; rfl; assumption
 
 lemma weakening : ∀ Γ₁ Γ₂ t τ,
   hasType Γ₂ t τ →
-  ctxOk (Γ₁ ++ Γ₂) →
+  envOk (Γ₁ ++ Γ₂) →
   hasType (Γ₁ ++ Γ₂) t τ := by
   intro Γ₁ Γ₂ t τ hty hctx
   rw [<- List.nil_append (Γ₁ ++ Γ₂)]
@@ -325,7 +325,7 @@ lemma weakening : ∀ Γ₁ Γ₂ t τ,
 
 lemma typingSubstVar Γ1 Γ2 u τ1 τ2 z x:
   binds x τ1 (Γ2 ++ (z, τ2)::Γ1) →
-  ctxOk (Γ2 ++ (z, τ2)::Γ1) →
+  envOk (Γ2 ++ (z, τ2)::Γ1) →
   hasType Γ1 u τ2 →
   hasType (Γ2 ++ Γ1) (substF z u (.fvar x)) τ1 := by
   intro bh hctx hty
@@ -342,7 +342,7 @@ lemma typingLc Γ t τ : hasType Γ t τ → lc t := by
 
 lemma typingSubst'' Γ1 Γ2 e u τ1 τ2 x :
   hasType Γ2 e τ1 →
-  ((Γ3 : ctx) → Γ2 = (Γ3 ++ (x, τ2) :: Γ1) →
+  ((Γ3 : env) → Γ2 = (Γ3 ++ (x, τ2) :: Γ1) →
   hasType (Γ3 ++ (x, τ2) :: Γ1) e τ1 →
   hasType Γ1 u τ2 →
   hasType (Γ3 ++ Γ1) (substF x u e) τ1) := by
