@@ -50,6 +50,7 @@ object BasicWithData {
   case class App(e1: Expr, e2: Expr) extends Expr
   case class Lit(i: Int) extends Expr
   case class Aop(op: String, e1: Expr, e2: Expr) extends Expr
+  case class Let(x: String, e: Expr, body: Expr) extends Expr
 
   trait Value
   case class FunV(f: Value ⇒ Value) extends Value
@@ -65,9 +66,12 @@ object BasicWithData {
     }
     case Lit(i) ⇒ IntV(i)
     case Aop("+", e1, e2) ⇒
-      (interp(e1, ρ), interp(e2, ρ)) match {
-        case (IntV(v1), IntV(v2)) => IntV(v1 + v2)
-      }
+      val IntV(v1) = interp(e1, ρ)
+      val IntV(v2) = interp(e2, ρ)
+      IntV(v1 + v2)
+    case Let(x, e, body) ⇒
+      val v = interp(e, ρ)
+      interp(body, ρ + (x → v))
   }
 }
 
