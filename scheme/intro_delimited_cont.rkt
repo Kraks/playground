@@ -65,3 +65,47 @@
 (define cons123 (reset (id-list-dc (list 1 2 3))))
 
 (cons123 (list 4 5 6))
+
+;; reset == prompt
+;; shift == control
+
+(reset (shift e (displayln "get there"))
+       (displayln "never reach here"))
+
+(reset (define x (shift k
+                        (k 1)
+                        (k 5)
+                        (k 25)))
+       (printf "shift ~a\n" x))
+
+(reset (define x (shift k (displayln (k 42))))
+       "here is the continuation")
+
+;;;;;;;;;;;;;
+
+(prompt (control k (displayln "get there"))
+        (display "never reach here"))
+
+(prompt (define x (control k
+                           (k 1)
+                           (k 5)
+                           (k 25)))
+        (printf "shift ~a\n" x))
+
+(prompt (define-values (x y)
+          (control k (displayln (k 1 2))))
+        "here is the continuation"
+        x
+        y)
+
+;;;;;;;;;;;;
+
+(prompt (+ 2 (control k (k 5))))
+
+(+ 2 (prompt (+ 2 (control k 5))))
+
+(prompt (+ 2 (control k (+ 1 (control k1 (k1 6))))))
+
+(prompt (+ 2 (control k (+ 1 (control k1 (k 6))))))
+
+(prompt (+ 2 (control k (control k1 (control k2 (k2 6))))))
