@@ -272,36 +272,57 @@ lemma envTypeExtend : ∀ Δ1 Δ2 Γ v1 v2 τ,
   envType Δ1 Δ2 Γ →
   closedB v1 0 → closedB v2 0 →
   valType v1 v2 τ →
-  envType (v1::Δ1) (v2::Δ2) (τ::Γ) := by sorry
-  /--
+  envType (v1::Δ1) (v2::Δ2) (τ::Γ) := by
   intros Δ1 Δ2 Γ v1 v2 τ henv hclv1 hclv2 hv12
   constructor; simp; apply henv.1
   constructor; simp; apply henv.2.1
-  intros τ' x hbd; rcases henv with ⟨_, _, h⟩
+  intros τ' x hbd; rcases henv with ⟨hlen1, hlen2, h⟩
   by_cases hx: (x = Δ1.length)
-  .
-  --/
+  . simp [hx]; constructor; assumption; simp [hlen1, hlen2]
+    constructor; assumption; simp at hbd; simp [hx, hlen1] at hbd
+    rw [<- hbd]; assumption
+  . simp at hbd; rw [<-hlen1, if_neg hx] at hbd;
+    simp; rw [if_neg hx]; rw [hlen2, <-hlen1, if_neg hx]
+    specialize h τ' x hbd; rcases h with ⟨v1, v2, h⟩
+    exists v1; constructor; exact h.1; constructor; exact h.2.1
+    exists v2; exact h.2.2
 
 lemma envTypeClosed : ∀ Δ1 Δ2 Γ, envType Δ1 Δ2 Γ →
   (∀ x t1, indexr x Δ1 = some t1 → closedB t1 0) ∧
-  (∀ x t1, indexr x Δ2 = some t1 → closedB t1 0) := by sorry
+  (∀ x t1, indexr x Δ2 = some t1 → closedB t1 0) := by
+  intros Δ1 Δ2 Γ henv; rcases henv with ⟨hlen1, hlen2, h⟩
+  apply And.intro
+  . intros x t1 hidx;
+    have hx : (x < Δ1.length) := by apply indexrSome'; exists t1
+    rw [hlen1] at hx; have hidx' := indexrSome Γ x hx
+    rcases hidx' with ⟨τ, hidx'⟩;
+    have ⟨v1, v2, hidxv1, hclv1, hidxv2, hclv2, hval⟩  := h τ x hidx'
+    rw [hidx] at hidxv1; cases hidxv1; assumption
+  . intros x t1 hidx;
+    have hx : (x < Δ2.length) := by apply indexrSome'; exists t1
+    rw [hlen2] at hx; have hidx' := indexrSome Γ x hx
+    rcases hidx' with ⟨τ, hidx'⟩;
+    have ⟨v1, v2, hidxv1, hclv1, hidxv2, hclv2, hval⟩  := h τ x hidx'
+    rw [hidx] at hidxv2; cases hidxv2; assumption
+
+@[simp]
+def wf (t: tm) (Γ: tenv) := closedB t 0 ∧ closedF t (Γ.length)
 
 @[simp]
 def semType (Γ : tenv) (t1 t2 : tm) (τ : ty) : Prop :=
   ∀ Δ1 Δ2,
-  closedB t1 0 → closedB t2 0 →
-  closedF t1 (Δ1.length) → closedF t2 (Δ2.length) →
+  wf t1 Γ → wf t2 Γ →
   envType Δ1 Δ2 Γ →
   expType (substF Δ1 t1) (substF Δ2 t2) τ
 
 lemma semTrue : ∀ Γ, semType Γ .tru .tru .bool := by
-  intros Γ Δ1 Δ2 h _ _ _ _ ; exists (.tru); exists (.tru); simp; apply stepn.refl
+  intros Γ Δ1 Δ2 h _ _ ; exists (.tru); exists (.tru); simp; apply stepn.refl
 
 lemma semFalse : ∀ Γ, semType Γ .fls .fls .bool := by
-  intros Γ Δ1 Δ2 h _ _ _ _; exists (.fls); exists (.fls); simp; apply stepn.refl
+  intros Γ Δ1 Δ2 h _ _; exists (.fls); exists (.fls); simp; apply stepn.refl
 
 lemma semVar : ∀ Γ x τ, binds x τ Γ → semType Γ (.fvar x) (.fvar x) τ := by
-  intros Γ x τ hbd Δ1 Δ2 _ _ _ _ henv
+  intros Γ x τ hbd Δ1 Δ2 _ _ henv
   rcases henv with ⟨_, _, h⟩
   have ⟨v1, v2, idx1, cl1, idx2, cl2, semv⟩ := h τ x hbd
   exists v1; exists v2; simp [idx1, idx2]
@@ -311,12 +332,11 @@ lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
   semType Γ f1 f2 (.arrow τ1 τ2) →
   semType Γ t1 t2 τ1 →
   semType Γ (.app f1 t1) (.app f2 t2) τ2 := by
-  intros Γ f1 f2 t1 t2 τ1 τ2 hsemf hsemt Δ1 Δ2 hclb1 hclb2 hclf1 hclf2 henv
-  rcases hclb1 with ⟨hclbf1, hclbt1⟩
-  rcases hclb2 with ⟨hclbf2, hclbt2⟩
-  simp at hclf1; simp at hclf2
-  rcases hsemf Δ1 Δ2 hclbf1 hclbf2 hclf1.1 hclf2.1 henv with ⟨v1, v2, hstn1, hstn2, hcl1, hcl2, hv12⟩
-  rcases hsemt Δ1 Δ2 hclbt1 hclbt2 hclf1.2 hclf2.2 henv with ⟨v3, v4, hstn3, hstn4, hcl3, hcl4, hv34⟩
+  intros Γ f1 f2 t1 t2 τ1 τ2 hsemf hsemt Δ1 Δ2 hwf1 hwf2 henv
+  simp at hwf1; simp at hwf2
+  unfold semType at hsemf hsemt
+  rcases hsemf Δ1 Δ2 ⟨hwf1.1.1, hwf1.2.1⟩ ⟨hwf2.1.1, hwf2.2.1⟩ henv with ⟨v1, v2, hstn1, hstn2, hcl1, hcl2, hv12⟩
+  rcases hsemt Δ1 Δ2 ⟨hwf1.1.2, hwf1.2.2⟩ ⟨hwf2.1.2, hwf2.2.2⟩ henv with ⟨v3, v4, hstn3, hstn4, hcl3, hcl4, hv34⟩
   cases v1 <;> cases v2 <;> try simp at hv12
   case _ f1t f2t =>
   have ⟨v5, hst5, hcl5, v6, hst6, hcl6, hv56⟩ := hv12 v3 v4 hv34 hcl3 hcl4
@@ -343,27 +363,27 @@ lemma semAbs : ∀ Γ t1 t2 τ1 τ2,
   semType (τ1::Γ) (openSubst t1 0 (.fvar Γ.length)) (openSubst t2 0 (.fvar Γ.length)) τ2 →
   semType Γ (.abs t1) (.abs t2) (.arrow τ1 τ2) :=
 by
-  intros Γ t1 t2 τ1 τ2 hsem Δ1 Δ2 hclb1 hclb2 hclf1 hclf2 henv
+  intros Γ t1 t2 τ1 τ2 hsem Δ1 Δ2 hwf1 hwf2 henv
   exists (substF Δ1 (.abs t1)); exists (substF Δ2 (.abs t2))
   constructor; apply stepn.refl
   constructor; apply stepn.refl
-  simp at hclb1; simp at hclb2
-  have hclb1' := openClosed' t1 (Γ.length) 0 hclb1
-  have hclb2' := openClosed' t2 (Γ.length) 0 hclb2
+  simp at hwf1; simp at hwf2
+  have hclb1' := openClosed' t1 (Γ.length) 0 hwf1.1
+  have hclb2' := openClosed' t2 (Γ.length) 0 hwf2.1
   have envcl := envTypeClosed Δ1 Δ2 Γ henv
-  constructor; apply substFClosedBComm _ _ _ envcl.1 hclb1
-  constructor; apply substFClosedBComm _ _ _ envcl.2 hclb2
-  simp; intros v1 v2 hval12 hclv1 hclv2; simp at hclf1; simp at hclf2
+  constructor; apply substFClosedBComm _ _ _ envcl.1 hwf1.1
+  constructor; apply substFClosedBComm _ _ _ envcl.2 hwf2.1
+  simp; intros v1 v2 hval12 hclv1 hclv2;
   have henv' := envTypeExtend Δ1 Δ2 Γ v1 v2 τ1 henv hclv1 hclv2 hval12
-  have clf1' := closedFInc _ _ 0 hclf1; rw [lenInc v1] at clf1'; rw [henv.1] at clf1'
-  have clf2' := closedFInc _ _ 0 hclf2; rw [lenInc v2] at clf2'; rw [henv.2.1] at clf2'
-  have hsem' := hsem (v1::Δ1) (v2::Δ2) hclb1' hclb2' clf1' clf2' henv'
+  have clf1' := closedFInc _ _ 0 hwf1.2;
+  have clf2' := closedFInc _ _ 0 hwf2.2;
+  have hsem' := hsem (v1::Δ1) (v2::Δ2) ⟨hclb1', clf1'⟩ ⟨hclb2', clf2'⟩ henv'
   rcases hsem' with ⟨vr1, vr2, hstr1, hstr2, hclvr1, hclvr2, semvr⟩
   rw [<-henv.1] at hstr1; rw [<-henv.2.1] at hstr2
   rw [substFOpenComm] at hstr1; rw [substFOpenComm] at hstr2
   exists vr1; constructor; assumption; constructor; assumption
-  exists vr2; rw [henv.2.1]; rw [<-henv.2.1]; assumption
-  exact envcl.2; assumption; exact envcl.1
+  exists vr2; rw [henv.2.1]; exact hwf2.2; exact envcl.2; rw [henv.1]; exact hwf1.2
+  exact envcl.1
 
 theorem fundamental : ∀ Γ t τ,
   hasType Γ t τ → semType Γ t t τ := by
@@ -394,12 +414,12 @@ lemma hasTypeClosedF : ∀ t τ, hasType [] t τ → closedF t 0 := by
 
 theorem safety : ∀ t τ, hasType [] t τ → expType t t τ := by
   intros t τ h; have h' := fundamental _ _ _ h
-  have hclb := hasTypeClosedB [] t τ h
-  have hclf := hasTypeClosedF t τ h
-  simp at h'; rcases h' [] [] hclb hclf hclf rfl rfl with ⟨v1, hst1, v2, hst2, hcl1, hcl2, hval⟩; simp
+  have b := hasTypeClosedB [] t τ h
+  have f := hasTypeClosedF t τ h
+  rcases h' [] [] ⟨b, f⟩ ⟨b, f⟩ envTypeMt with ⟨v1, v2, hst1, hst2, hclb1, hclb2, hval⟩; simp
   exists v1; rw [substFMt] at hst1; constructor; assumption
   exists v2; rw [substFMt] at hst2; constructor; assumption
-  exact ⟨hcl1, hcl2, hval⟩
+  exact ⟨hclb1, hclb2, hval⟩
 
 inductive ctxType : (tm → tm) → tenv → ty → tenv → ty → Prop
 | root : ∀ Γ τ, ctxType id Γ τ Γ τ
@@ -412,6 +432,9 @@ inductive ctxType : (tm → tm) → tenv → ty → tenv → ty → Prop
 | abs : ∀ Γ τ1 τ2,
   -- t is an opened term, referring to a free variable (.fvar Γ.length)
   ctxType (λ t => .abs (close t Γ.length 0)) (τ1::Γ) τ2 Γ (.arrow τ1 τ2)
+
+def closedCtx (C: tm → tm) :=
+  ∀ Γ1 τ1 Γ2 τ2, ctxType C Γ1 τ1 Γ2 τ2 → ∀ t, wf t Γ1 → wf (C t) Γ2
 
 lemma openCloseId : ∀ t n k, closedB t k → (openSubst (close t n k) k (tm.fvar n)) = t := by
   intros t; induction t <;> intros n k hcl <;> simp;
@@ -439,3 +462,46 @@ by
   . case abs Γ τ1' τ2' =>
     apply semAbs; rw [openCloseId]; rw [openCloseId]
     assumption; assumption; assumption
+
+theorem adaquacy : ∀ t1 t2 τ,
+  wf t1 [] → wf t2 [] →
+  semType [] t1 t2 τ →
+  ((∃ v1, stepn t1 v1 ∧ value v1) ↔ (∃ v2, stepn t2 v2 ∧ value v2)) := by
+  intros t1 t2 τ wf1 wf2 hsem;
+  specialize hsem [] [] wf1 wf2 envTypeMt
+  rcases hsem with ⟨v1, v2, hst1, hst2, hcl1, hcl2, hv12⟩
+  apply Iff.intro
+  . intros h1; exists v2; rw [substFMt] at hst2
+    exact ⟨hst2, (valTypeValue _ _ _ hv12).2⟩
+  . intros h1; exists v1; rw [substFMt] at hst1
+    exact ⟨hst1, (valTypeValue _ _ _ hv12).1⟩
+
+def ctxEquiv Γ t1 t2 τ :=
+  hasType Γ t1 τ →
+  hasType Γ t2 τ →
+  ∀ C, ctxType C Γ τ [] .bool → closedCtx C →
+  ((∃ v1, stepn (C t1) v1 ∧ value v1) ↔ (∃ v2, stepn (C t2) v2 ∧ value v2))
+
+theorem soundness : ∀ Γ t1 t2 τ,
+  wf t1 Γ → wf t2 Γ →
+  semType Γ t1 t2 τ → ctxEquiv Γ t1 t2 τ := by
+  intros Γ t1 t2 τ hwf1 hwf2 hsem htyt1 htyt2 C hctx hctxcl
+  have hcs := congruence _ _ _ _ _ hctx _ _ hwf1.1 hwf2.1 hsem
+  have hc1 := (hctxcl _ _ _ _ hctx _ hwf1)
+  have hc2 := (hctxcl _ _ _ _ hctx _ hwf2)
+  apply adaquacy; exact hc1; exact hc2; apply hcs
+
+theorem soundness' : ∀ Γ t1 t2 τ,
+  semType Γ t1 t2 τ →
+  wf t1 Γ → wf t2 Γ →
+  hasType Γ t1 τ → hasType Γ t2 τ →
+  ∀ C, ctxType C Γ τ [] .bool → closedCtx C →
+  ∃ v, stepn (C t1) v ∧ stepn (C t2) v ∧ value v := by
+  intros Γ t1 t2 τ hsem hwf1 hwf2 hty1 hty2 C hctx hctxcl
+  have hcs := congruence _ _ _ _ _ hctx _ _ hwf1.1 hwf2.1 hsem
+  specialize hcs [] [] (hctxcl _ _ _ _ hctx _ hwf1) (hctxcl _ _ _ _ hctx _ hwf2) envTypeMt
+  rw [substFMt] at hcs; rw [substFMt] at hcs
+  rcases hcs with ⟨v1, v2, hst1, hst2, hcl1, hcl2, hv12⟩
+  cases v1 <;> cases v2 <;> try simp at hv12
+  exists .fls; constructor; assumption; constructor; assumption; constructor
+  exists .tru; constructor; assumption; constructor; assumption; constructor
