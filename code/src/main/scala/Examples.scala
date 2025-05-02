@@ -44,4 +44,24 @@ object Examples {
         Assign("x", BinOp("+", Var("x"), Lit(1)))),
       Ret(Var("x"))))
 
+  val nonTerm1 = FunDef("main", List("x"),
+    SSeq(
+      While(Lit(1),
+        SSeq(Assign("x", BinOp("-", Var("x"), Lit(1))),
+          Cond(BinOp("=", Var("x"), Lit(0)),
+            Ret(Lit(1)),
+            Skip))),
+      Ret(Lit(0))))
+
+  val nonTerm2 = FunDef("main", List("x"),
+    SSeq(
+      While(Lit(1),
+        Assign("x", BinOp("-", Var("x"), Lit(1)))),
+      Ret(Lit(0))))
+
+  val noLoop = FunDef("main", List("x"),
+    SSeq(
+      While(Lit(0),
+        Assign("x", BinOp("-", Var("x"), Lit(1)))),
+      Ret(Lit(1))))
 }

@@ -71,4 +71,16 @@ class TestAbstract extends AnyFunSuite {
     assert(absRun(powerWhile, "power", Interval.from(1), top) == Interval.from(1))
     assert(absRun(powerWhile, "power", Interval.from(2), top) == Interval.make(1, Double.PositiveInfinity))
   }
+
+  test("nonTerm1") {
+    assert(absRun(nonTerm1, "main", top) == Interval.make(0, 1))
+  }
+
+  test("nonTerm2") {
+    assert(absRun(nonTerm2, "main", top) == Interval.make(0, 0))
+  }
+
+  test("noLoop") {
+    assert(absRun(noLoop, "main", top) == Interval.make(1, 1))
+  }
 }
