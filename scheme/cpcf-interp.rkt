@@ -12,7 +12,7 @@
 (define-type Label Symbol)
 (define-type Num Integer)
 (define-type Var Symbol)
-(define-type Op (U '+1 '-1 'even? 'odd? 'zero?))
+(define-type Op (U '+1 '-1 'even? 'odd? 'zero? 'pz?))
 
 ; Expressions
 (define-type Expr
@@ -119,7 +119,10 @@
        [(? number? n) (ret (even? n) σ)])]
     ['odd?
      (match v
-       [(? number? n) (ret (odd? n) σ)])]))
+       [(? number? n) (ret (odd? n) σ)])]
+    ['pz?
+     (match v
+       [(? number? n) (ret (>= v 0) σ)])]))
 
 (: monitor (Kon Value Sto -> Ans))
 (define (monitor k v σ)
@@ -296,3 +299,41 @@
         serM
         'f0)
    (lam 'y (vbl 'y))))
+
+;; Xu et al. (2009)
+; blame the server (f:server), since it produces -1.
+
+(define f
+  (lam 'f (app (prim '-1) (app (vbl 'f) (num 1)))))
+
+(define f-contract
+  (~> (~> (pred (lam 'x (bool #t)))
+          (pred (prim 'pz?)))
+      (pred (prim 'pz?))))
+
+(eval-top
+ (app (mon f-contract
+           ':server
+           f
+           'f)
+      (lam 'z (app (prim '-1) (vbl 'z)))))
+
+;; Modify f to be λf.(f 0) + 1
+; Then we blame the client
+
+(eval-top
+ (app (mon f-contract
+           ':server
+            (lam 'f (app (prim '+1) (app (vbl 'f) (num 0))))
+           'f)
+      (lam 'z (app (prim '-1) (vbl 'z)))))
+
+;; Modify f to be λf.(f 1) + 1
+; Should we blame any one? seems not.
+
+(eval-top
+ (app (mon f-contract
+           ':server
+            (lam 'f (app (prim '+1) (app (vbl 'f) (num 1))))
+           'f)
+      (lam 'z (app (prim '-1) (vbl 'z)))))
