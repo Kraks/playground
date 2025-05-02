@@ -1,5 +1,9 @@
 package types.fpbook
 
+trait Functor[F[_]] {
+  def map[A, B](fa: F[A])(f: A => B): F[B]
+}
+
 trait Semigroup[A] {
   /* Associativity: ∀ a b c, op(op(a, b), c) = op(a, op(b, c)). */
  def op(a1: A, a2: A): A
