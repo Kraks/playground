@@ -13,3 +13,7 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "STLC"
+
+[[lean_exe]]
+name = "STLC"
+root = "Main"
