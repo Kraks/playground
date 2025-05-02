@@ -132,15 +132,15 @@
 (define (eval-contract c ρ σ l p)
   (match c
     [(~> c1 c2)
-     (match (eval-contract c1 ρ σ l p)
+     (match (eval-contract c1 ρ σ l (neg p))
        [(mret d1 σ1)
-        (match (eval-contract c2 ρ σ1 l (neg p))
+        (match (eval-contract c2 ρ σ1 l p)
           [(mret d2 σ2)
            (mret (--> d1 d2) σ2)])])]
     [(pred e)
      (match (eval e ρ σ)
        [(? blame? b) b]
-       [(ret v σ) (mret (flat v l ':server) σ)])]))
+       [(ret v σ) (mret (flat v l p) σ)])]))
 
 (: eval (Expr Env Sto -> Ans))
 (define (eval e ρ σ)
@@ -199,3 +199,47 @@
        ':server
        (num 3)
        'a0)))
+
+; Blame f's argument/context
+(eval-top
+ (app
+  (mon (~> (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+           (pred (lam 'x (app (prim 'odd?) (vbl 'x)))))
+       ':server
+       (lam 'x (vbl 'x))
+       'f0)
+  (num 4)))
+
+; Blame f's implementation
+(eval-top
+ (app
+  (mon (~> (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+           (pred (lam 'x (app (prim 'even?) (vbl 'x)))))
+       ':server
+       (lam 'x (vbl 'x))
+       'f0)
+  (num 3)))
+
+; Ok
+(eval-top
+  (app
+   (mon (~> (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+            (pred (lam 'x (app (prim 'even?) (vbl 'x)))))
+        ':server
+        (lam 'x (app (prim '+1) (vbl 'x)))
+        'f0)
+   (num 3)))
+
+; Blame the result of application
+(eval-top
+ (mon
+  (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+  ':server
+  (app
+   (mon (~> (pred (lam 'x (app (prim 'odd?) (vbl 'x))))
+            (pred (lam 'x (app (prim 'even?) (vbl 'x)))))
+        ':server
+        (lam 'x (app (prim '+1) (vbl 'x)))
+        'f0)
+   (num 3))
+  'v0))

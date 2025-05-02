@@ -79,3 +79,12 @@
         (if (procedure? val)
             (λ (x) (rng-c (val (doc-c x))))
             (blame pos))))))
+
+;; Test
+
+(define/contract (f x)
+  (-> odd? odd?)
+  x)
+
+; blame the argument
+; (f 4)
