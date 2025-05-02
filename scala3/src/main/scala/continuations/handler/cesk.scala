@@ -30,7 +30,9 @@ enum State:
 import RValue.*
 import State.*
 
-def inject(e: Comp): State = PState(e, Map.empty, Map.empty, List(Frame(List(), HanClo(Map.empty, Return("x", Ret(Var("x")))))))
+//def inject(e: Comp): State = PState(e, Map.empty, Map.empty, List(Frame(List(), HanClo(Map.empty, Return("x", Ret(Var("x")))))))
+
+def inject(e: Comp): State = PState(Handle(e, Return("x", Ret(Var("x")))), Map.empty, Map.empty, List())
 
 def prim(op: String, v1: RValue, v2: RValue): RValue = (v1, v2) match
   case (IntV(i), IntV(j)) => op match
