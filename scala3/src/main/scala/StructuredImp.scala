@@ -121,14 +121,36 @@ object Functional {
     case VLoc(l) => Some(l)
     case _ => None
 
+  def primEval(op: String, i1: Int, i2: Int): Int = op match {
+    case "+" => i1 + i2
+    case "-" => i1 - i2
+    case "*" => i1 * i2
+    case "/" => i1 / i2
+  }
+  def predEval(op: String, i1: Int, i2: Int): Boolean = op match {
+    case ">" => i1 > i2
+    case ">=" => i1 >= i2
+    case "<=" => i1 <= i2
+    case "<" => i1 < i2
+    case "==" => i1 == i2
+  }
+  def arithOp(op: String) = Set("+", "-", "*", "/")(op)
+  def predOp(op: String) = Set(">", ">=", "<=", "<", "==")(op)
+
   def eval(e: Expr)(σ: Sto): Option[Value] = e match {
     case Const(x: Int) => Some(VInt(x))
     case Const(b: Boolean) => Some(VBool(b))
-    case BinOp("+", e1, e2) => ???
+    case Addr(x) => Some(VLoc(SLoc(x)))
+    case BinOp(op, e1, e2) if arithOp(op) =>
       for {
-        i1 <- eval(e)(σ) >>= toNat
-        i2 <- eval(e)(σ) >>= toNat
-      } yield VInt(i1 + i2)
+        i1 <- eval(e1)(σ) >>= toNat
+        i2 <- eval(e2)(σ) >>= toNat
+      } yield VInt(primEval(op, i1, i2))
+    case BinOp(op, e1, e2) if predOp(op) =>
+      for {
+        i1 <- eval(e1)(σ) >>= toNat
+        i2 <- eval(e2)(σ) >>= toNat
+      } yield VBool(predEval(op, i1, i2))
     case FieldRead(e1, e2) =>
       for {
         l <- eval(e1)(σ) >>= toLoc
@@ -184,5 +206,27 @@ object Functional {
       } yield σ1
     case Skip() => Some(σ)
     case Abort() => None
+  }
+
+  def run(s: Stmt): Option[Sto] = exec(s)(Map(), CRoot())
+}
+
+object TestFunctional {
+  import SyntaxSugar._
+  import Functional._
+
+  def main(args: Array[String]): Unit = {
+    // 2^10
+    val x = Const(10)
+    val body = Seq(assign("res", BinOp("*", Const(2), deref("res"))),
+      assign("x", BinOp("-", deref("x"), Const(1))))
+    val p =
+      Seq(
+        Alloc("x"),
+        Seq(Alloc("res"),
+          Seq(assign("x", x),
+            Seq(assign("res", Const(1)),
+              While(BinOp("<", Const(0), deref("x")), body)))))
+    println(run(p))
   }
 }
