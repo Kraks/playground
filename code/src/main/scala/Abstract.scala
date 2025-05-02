@@ -8,6 +8,10 @@ import Stmt._
 type AbsValue = Interval
 type AbsStore = Map[String, AbsValue]
 
+def lfp[T: Lattice](f: T => T)(t: T): T =
+  val next = f(t)
+  if (next ⊑ t) t else lfp(f)(next ⊔ t)
+
 def absEvalOp(op: String, i1: AbsValue, i2: AbsValue): AbsValue =
   op match {
     case "+" => i1 + i2
@@ -50,18 +54,14 @@ def absExec(s: Stmt, σ: AbsStore)(using Γ: FunEnv): (Option[AbsValue], AbsStor
       val thn = if (Interval.from(1) ⊑ c) Some(absExec(s1, σ)) else None
       val els = if (Interval.from(0) ⊑ c) Some(absExec(s2, σ)) else None
       (thn ⊔ els).get
-    case While(e, s) => 
-      val c = absEval(e, σ)
-      ???
-/*
-      val IntV(c) = eval(e, σ)
-      if (c == 1)
-        exec(s, σ) match {
-          case (Some(v), σ1) => (Some(v), σ1)
-          case (None, σ1) => exec(While(e, s), σ1)
-        }
-      else (None, σ)
- */
+    case While(e, s) =>
+      val loop: ((Option[AbsValue], AbsStore)) => (Option[AbsValue], AbsStore) = {
+        case (rt, σ) =>
+          if (Interval.from(1) ⊑ absEval(e, σ)) absExec(s, σ)
+          else (rt, σ)
+      }
+      if (!(Interval.from(1) ⊑ absEval(e, σ))) (None, σ)
+      else lfp(loop)((None, σ))
     case Ret(e) => (Some(absEval(e, σ)), σ)
   }
 
