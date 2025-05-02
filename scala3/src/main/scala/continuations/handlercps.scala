@@ -9,6 +9,9 @@ enum Term:
   case App(e1: Term, e2: Term)
   case TryWith(e1: Term, x: String, k: String, t2: Term)
   case Call(e: Term)
+import Term._
+
+package deepAndShallow {
 
 enum Val:
   case NumV(n: Int)
@@ -20,7 +23,6 @@ type Trail = MtTrail.type | Cont
 case class Handler(h: (Val, Val, Cont, Trail, MCont) => Val)
 type MCont = List[(Cont, Trail, Handler)]
 
-import Term._
 import Val._
 
 val idCont: Cont = Cont((v: Val, t: Trail, m: MCont) =>
@@ -72,3 +74,56 @@ def eval(e: Term, env: Env, c: Cont, t: Trail, m: MCont): Val =
         val vrS = FunV((v1, c1, t1, m1) => c.k(v1, t2 ++ (c1 :: t1), m1))
         h.h(v, vrD, c0, t0, m0)
       }, t, m)
+}
+
+package onlydeep {
+
+enum Val:
+  case NumV(n: Int)
+  case FunV(f: (Val, Cont, MCont) => Val)
+case class Cont(k: (Val, MCont) => Val)
+
+import Val._
+
+case object MtTrail
+type Trail = MtTrail.type | Cont
+case class Handler(h: (Val, Val, Cont, MCont) => Val)
+type MCont = List[(Cont, Handler)]
+
+val idCont: Cont = Cont((v: Val, m: MCont) =>
+  m match
+    case Nil => v
+    case (c, h) :: m => c.k(v, m))
+
+type Env = Map[String, Val]
+
+def eval(e: Term, env: Env, c: Cont, m: MCont): Val =
+  e match
+    case Num(n) => c.k(NumV(n), m)
+    case Plus(e1, e2) =>
+      eval(e1, env, Cont((v1, m1) =>
+        eval(e2, env, Cont((v2, m2) =>
+          (v1, v2) match
+            case (NumV(n1), NumV(n2)) => c.k(NumV(n1 + n2), m2)),
+        m1)),
+      m)
+    case Var(x) => c.k(env(x), m)
+    case Lam(x, e) =>
+      val f = FunV((v, c, m) => eval(e, env + (x -> v), c, m))
+      c.k(f, m)
+    case App(e1, e2) =>
+      eval(e1, env, Cont((v1, m1) =>
+        eval(e2, env, Cont((v2, m2) =>
+          v1 match
+            case FunV(f) => f(v2, c, m2)),
+        m1)),
+      m)
+    case TryWith(e1, x, k, e2) =>
+      val h = Handler((v, vr, c1, m1) => eval(e2, env + (x -> v) + (k -> vr), c1, m1))
+      eval(e1, env, idCont, (c, h) :: m)
+    case Call(e) =>
+      eval(e, env, Cont { case (v, (c0, h)::m0) =>
+        val vrD = FunV((v1, c1, m1) => c.k(v1, (c1, h)::m1))
+        h.h(v, vrD, c0, m0)
+      }, m)
+}
