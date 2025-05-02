@@ -1,5 +1,6 @@
 type act =
   | ReLU
+  | Tanh
 
 type expr =
   | Input
@@ -16,14 +17,18 @@ type nn = stmt list
 module StringMap = Map.Make(String)
 type env = float StringMap.t
 
+let eval_act act x =
+  match act with
+  | ReLU -> max 0.0 x
+  | Tanh -> tanh x
+
 let rec eval_stmt stmt env =
   let var, expr = stmt in
   match expr with
   | Input -> env
-  | Nonlinear (ReLU, x) ->
-    let x_val = StringMap.find x env in
-    let y_val = max 0.0 x_val in
-    StringMap.add var y_val env
+  | Nonlinear (act, x) ->
+    let y = eval_act act (StringMap.find x env) in
+    StringMap.add var y env
   | Linear { coeffs; const } ->
     let x_vals = List.map (fun (coeff, x) -> coeff *. (StringMap.find x env)) coeffs in
     let y_val = List.fold_left (+.) const x_vals in
@@ -52,6 +57,6 @@ let example2 = [
   ("x22_", Linear { coeffs = [(0.64, "x11"); (0.69, "x12")]; const = -0.39 });
   ("x21", Nonlinear (ReLU, "x21_"));
   ("x22", Nonlinear (ReLU, "x22_"));
-  ("x31_", Linear { coeffs = [(0.26, "x21"); (0.33, "x22")]; const = -0.45 });
-  ("x32_", Linear { coeffs = [(1.42, "x21"); (0.40, "x22")]; const = -0.45 });
+  ("x31", Linear { coeffs = [(0.26, "x21"); (0.33, "x22")]; const = -0.45 });
+  ("x32", Linear { coeffs = [(1.42, "x21"); (0.40, "x22")]; const = -0.45 });
 ]
