@@ -53,7 +53,7 @@ object Sec1 {
 object Sec2 {
   // two-level types (Sheard & Pasalic 2004)
   // Level 1: describe the shape of the data
-  abstract class List[+S]
+  abstract class List[+S] //covariant S <: T => List[S] <: List[T]
   case object Nil extends List[Nothing]
   case class Cons[S](hd: Int, tl: S) extends List[S]
 
@@ -107,6 +107,8 @@ object Sec3 {
   val StNil = Nil
   val StCons = Cons
 
+  //unfold(f: A => 1+NxA)(a: A): 1+NxList
+
   // A sorting function transforms an unsorted list to a sorted list
   type SortFunc = Fix[List] => Fix[StList]
 
@@ -123,7 +125,7 @@ object Sec3 {
       else        StCons(y, Cons(x, rest)) // Note: does not make use of the fact that y::rest is already sorted
   }
 
-  def naiveInsertSort: Fix[List] => Fix[List] = fold(unfold(naiveInsert))
+  def naiveInsertSort: Fix[List] => Fix[StList] = fold(unfold(naiveInsert))
 
   // Angle 2: SortFunc is an unfold that produces a value of Fix[StList]
   def a: List[StList[Fix[List]]] => StList[Fix[List]] = ???
@@ -182,7 +184,7 @@ object Sec4 {
   // product of types
   type ⊗[A, B] = (A, B)
   // sum of types
-  type ⊕[A, B] = Either[A, B]
+  type ⊕[A, B] = Either[A, B] // Left: A => Either[A, B], Right: B => Either[A, B]
 
   implicit class Fun1Ops[A, B](f: A => B) {
     def △[C](g: A => C): A => B ⊗ C = a => (f(a), g(a))
