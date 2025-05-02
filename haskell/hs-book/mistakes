@@ -1,0 +1,78 @@
+1.p37
+abs, `a` should be an instance of Ord
+
+2.p54
+[True..] can not create infinite list under GHCi 7.8.3
+
+3.p60
+reverseSentence, should use function composition (.), not ($)
+and a typo: `s` should be in upper case
+
+4.p71
+fastFib, should using function composition (.), not ($)
+
+5.p83
+bubbleSort' :: Ord => [a] -> [a]
+
+6.p93
+fix :: Eq a => (a -> a) -> a -> a
+
+7.p96
+lazyShorter :: [a] -> [a] -> Bool
+
+8.p120
+isort :: Ord a => [a] -> [a]
+
+9.p121
+skip type annotation
+skip :: Eq a => a -> [a] -> [a]
+
+10.p122
+foldl `a2` should be `a`
+
+11.p139
+data type Nat should deriving from (Show, Eq)
+
+12.p147
+newtype (Num a, Eq b) => T a b = NewType (a -> b)
+Illegal datatype context (use DatatypeContexts)
+
+13.p160
+{#LANGUAGE GADTs #-} -> {-#LANGUAGE GADTs #-}
+
+14.p165
+duplicated :t Empty
+
+15.p174
+(*>) :: Applicative f => f a -> f b -> f b
+(<*) :: Applicative f => f a -> f b -> f a
+
+16.p178
+some :: Alternative f => f a -> f [a]
+many :: Alternative f => f a -> f [a]
+
+17.p189
+instance GPlus Int Float Float where
+instance GPlus Int Float Double where
+not clear that only could exist one of them.
+
+18.p203
+Just 5 `evalSeq` (\x -> (Just 6 `evalSeq` (\y -> Nothing))) 
+Just 5 `evalSeq` (\x -> (Just 6 `evalSeq` (\y -> Just (x+y))))  --> Just 11
+
+19.p204
+else Just (n1 * n2) --> else Just (n1 `div` n2)
+
+20.p208
+In ghci 7.10.3, Monad type is required to be an instance of Applicative and Functor
+
+21.p212
+Monoid (m a) should enable FlexibleInstances
+
+22.p223
+type of sequence and sequence_
+sequence :: (Monad m, Traversable t) => t (m a) -> m (t a)
+sequence_ :: (Monad m, Foldable t) => t (m a) -> m ()
+
+23.p247
+to be an instance of Monad requires being an instance of Applicative and Functor firstly
