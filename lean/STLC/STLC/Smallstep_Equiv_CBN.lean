@@ -1,7 +1,7 @@
--- STLC
+
+-- STLC with full CBN
 -- locally nameless where free variables are de Bruijn levels
--- call-by-name small-step semantics and binary logical relations
--- with additional function self-reference
+-- small-step semantics and binary logical relations
 -- contextual equivalence
 
 import Mathlib.Data.Finset.Sort
@@ -18,8 +18,6 @@ inductive tm : Type
 | tru : tm
 | bvar : ℕ → tm
 | fvar : ℕ → tm
--- functions has a self-reference binding: λf;x.t
--- bvar 0 refers to the self-reference, and bvar 1 refers to the argument
 | abs : tm → tm
 | app : tm → tm → tm
 
@@ -31,17 +29,15 @@ abbrev venv := List tm
 def openSubst (t1: tm) (n: ℕ) (t2: tm) : tm :=
   match t1 with
   | .fls | .tru => t1
-  | .bvar x => if x = n then t2 else .bvar x
+  | .bvar x =>
+    if x = n then t2
+    -- XX: we still need this?
+    -- else if n < x then .bvar (x - 1)
+    else .bvar x
   | .fvar x => .fvar x
   | .abs t1 => .abs (openSubst t1 (n + 1) t2)
   | .app t11 t12 =>
     .app (openSubst t11 n t2) (openSubst t12 n t2)
-
-@[simp]
-def openSubst' (t t1 t2 : tm) : tm := openSubst (openSubst t 0 t1) 1 t2
-
-@[simp]
-def openFvar t (n : ℕ) := openSubst' t (.fvar n) (.fvar (n+1))
 
 @[simp]
 def close (t1: tm) (n: ℕ) (m: ℕ) : tm :=
@@ -82,7 +78,7 @@ def closedB (t: tm) (n: ℕ) : Prop :=
   | .fls | .tru => true
   | .bvar x => x < n
   | .fvar _ => true
-  | .abs t1 => closedB t1 (n + 2)
+  | .abs t1 => closedB t1 (n + 1)
   | .app t11 t12 => closedB t11 n ∧ closedB t12 n
 
 lemma openClosed : ∀ t n m,
@@ -101,16 +97,15 @@ lemma openClosed : ∀ t n m,
   case app t1 t2 ih1 ih2 =>
     apply And.intro; apply ih1 n m h.1; apply ih2 n m h.2
 
-lemma openClosed': ∀ t n m, closedB t (m+2) →
-  closedB (openSubst (openSubst t m (.fvar n)) (m+1) (.fvar (n+1))) m := by
+lemma openClosed': ∀ t n m,
+    closedB t (m+1) → closedB (openSubst t m (.fvar n)) m := by
   intros t; induction t <;> intros n m h <;> simp
   case bvar x =>
     by_cases hx: (x = m)
     . simp [hx]
-    . rw [if_neg hx]; simp at h; simp;
-      by_cases hx': (x = m+1); simp [hx']; rw [if_neg hx']; simp; omega
+    . rw [if_neg hx]; simp at h; simp; omega
   case abs t ih =>
-    sorry
+    apply ih n (m+1); simp at h; assumption
   case app t1 t2 ih1 ih2 =>
     apply And.intro; apply ih1 n m h.1; apply ih2 n m h.2
 
@@ -192,7 +187,7 @@ inductive hasType : tenv → tm → ty → Prop
 | tru : ∀ Γ, hasType Γ .tru .bool
 | var : ∀ Γ x τ, binds x τ Γ → hasType Γ (.fvar x) τ
 | abs : ∀ Γ t τ₁ τ₂,
-  hasType (τ₁::(.arrow τ₁ τ₂)::Γ) (openFvar t Γ.length) τ₂ →
+  hasType (τ₁::Γ) (openSubst t 0 (.fvar Γ.length)) τ₂ →
   closedF t Γ.length →
   hasType Γ (.abs t) (ty.arrow τ₁ τ₂)
 | app : ∀ Γ t₁ t₂ τ₁ τ₂,
@@ -207,14 +202,16 @@ inductive value : tm → Prop
 
 inductive step : tm → tm → Prop
 | beta : ∀ t1 t2,
-  step (.app (.abs t1) t2) (openSubst' t1 (.abs t1) t2)
+  step (.app (.abs t1) t2) (openSubst t1 0 t2)
 | app1 : ∀ t1 t1' t2,
   step t1 t1' →
   step (.app t1 t2) (.app t1' t2)
 | app2 : ∀ t1 t2 t2',
-  value t1 →
   step t2 t2' →
   step (.app t1 t2) (.app t1 t2')
+| lam : ∀ t1 t2,
+  step t1 t2 →
+  step (.abs t1) (.abs t2)
 
 inductive stepn : tm → tm → Prop
 | refl : ∀ t, stepn t t
@@ -228,13 +225,15 @@ lemma stepnApp1 : ∀ t1 t1' t2, stepn t1 t1' → stepn (.app t1 t2) (.app t1' t
 lemma stepnApp2 : ∀ t1 t2 t2', value t1 → stepn t2 t2' → stepn (.app t1 t2) (.app t1 t2') := by
   intros t1 t2 t2' hv h; induction h
   . constructor
-  . case _ hstn hst ih => apply stepn.multi; assumption; apply step.app2; assumption; assumption
+  . case _ hstn hst ih => apply stepn.multi; assumption; apply step.app2; assumption
 
 lemma stepnTrans : ∀ t1 t2 t3, stepn t1 t2 → stepn t2 t3 → stepn t1 t3 := by
   intros t1 t2 t3 h1 h2; induction h2
   . assumption
   . case _ _ _ hstn hst ih =>
     apply stepn.multi; apply ih; assumption
+
+-- valType is indexed by an tenv too
 
 @[simp]
 def valType (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
@@ -245,8 +244,8 @@ def valType (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
     ∀ v1 v2,
     valType v1 v2 τ1 → closedB v1 0 → closedB v2 0 →
     ∃ v3 v4,
-    stepn (openSubst' t1 (.abs t1) v1) v3 ∧ closedB v3 0 ∧
-    stepn (openSubst' t2 (.abs t2) v2) v4 ∧ closedB v4 0 ∧
+    stepn (openSubst t1 0 v1) v3 ∧ closedB v3 0 ∧
+    stepn (openSubst t2 0 v2) v4 ∧ closedB v4 0 ∧
     valType v3 v4 τ2
   | _, _, _ => false
 
@@ -349,14 +348,16 @@ lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
   exists v5; exists v6; constructor
   apply stepnTrans; apply stepnApp1; assumption
   apply stepnTrans; apply stepnApp2; constructor; assumption
-  have stbeta : step (f1t.abs.app v3) (openSubst' f1t (f1t.abs) v3) := by apply step.beta
+  have stbeta : step (f1t.abs.app v3) (openSubst f1t 0 v3) :=
+    by apply step.beta; exact (valTypeValue _ _ _ hv34).1
   apply stepnTrans; apply stepn.multi; apply stepn.refl
   apply stbeta; apply hst5;
   --
   constructor
   apply stepnTrans; apply stepnApp1; assumption
   apply stepnTrans; apply stepnApp2; constructor; assumption
-  have stbeta : step (f2t.abs.app v4) (openSubst' f2t (f2t.abs) v4) := by apply step.beta
+  have stbeta : step (f2t.abs.app v4) (openSubst f2t 0 v4) :=
+    by apply step.beta; exact (valTypeValue _ _ _ hv34).2
   apply stepnTrans; apply stepn.multi; apply stepn.refl
   apply stbeta; apply hst6;
   exact ⟨hcl5, hcl6, hv56⟩
@@ -364,7 +365,7 @@ lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
 lemma lenInc: ∀ {A} x (L : List A), L.length + 1 = (x::L).length := by intros _ L x; simp
 
 lemma semAbs : ∀ Γ t1 t2 τ1 τ2,
-  semType (τ1::(.arrow τ1 τ2)::Γ) (openFvar t1 Γ.length) (openFvar t2 Γ.length) τ2 →
+  semType (τ1::Γ) (openSubst t1 0 (.fvar Γ.length)) (openSubst t2 0 (.fvar Γ.length)) τ2 →
   semType Γ (.abs t1) (.abs t2) (.arrow τ1 τ2) :=
 by
   intros Γ t1 t2 τ1 τ2 hsem Δ1 Δ2 hwf1 hwf2 henv
@@ -381,8 +382,6 @@ by
   have henv' := envTypeExtend Δ1 Δ2 Γ v1 v2 τ1 henv hclv1 hclv2 hval12
   have clf1' := closedFInc _ _ 0 hwf1.2;
   have clf2' := closedFInc _ _ 0 hwf2.2;
-  unfold semType at hsem
-  -- need wf (openFvar t1 Γ.length) (τ1 :: τ1.arrow τ2 :: Γ)
   have hsem' := hsem (v1::Δ1) (v2::Δ2) ⟨hclb1', clf1'⟩ ⟨hclb2', clf2'⟩ henv'
   rcases hsem' with ⟨vr1, vr2, hstr1, hstr2, hclvr1, hclvr2, semvr⟩
   rw [<-henv.1] at hstr1; rw [<-henv.2.1] at hstr2

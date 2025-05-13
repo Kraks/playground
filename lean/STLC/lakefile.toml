@@ -15,5 +15,5 @@ scope = "leanprover-community"
 name = "STLC"
 
 [[lean_exe]]
-name = "STLC"
+name = "STLC_Exe"
 root = "Main"
