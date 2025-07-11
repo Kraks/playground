@@ -242,7 +242,7 @@ lemma envTypeExtend : ∀ Δ Γ v τ,
     . rw [hx] at bd; simp at bd;
       rw [hlen]; simp [hx]; rw [<-bd]; apply And.intro; assumption; assumption
     . rw [if_neg hx] at bd; rw [hlen]; rw [if_neg hx]
-      apply h; assumption
+      apply h; constructor
 
 lemma envTypeClosed : ∀ Δ Γ, envType Δ Γ →
   (∀ x t1, indexr x Δ = some t1 → closedB t1 0) := by

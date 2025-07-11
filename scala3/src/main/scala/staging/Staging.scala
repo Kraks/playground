@@ -2,7 +2,7 @@ package staging
 
 import scala.quoted.*
 
-given staging.Compiler = staging.Compiler.make(getClass.getClassLoader)
+given staging.Compiler = staging.Compiler.make(this.getClass.getClassLoader)
 
 def unrolledPowerCode(x: Expr[Double], n: Int)(using Quotes): Expr[Double] =
   if n == 0 then '{ 1.0 }
@@ -68,6 +68,19 @@ def dup(using Quotes): Expr[Int] = {
   */
 }
 
+case class Mut(var x: Int)
+
+def dupStore(using Quotes): Expr[Int] = {
+  def plus(v: Expr[Mut])(using Quotes): Expr[Int] = '{
+    ${v}.x = 4
+    ${v}.x
+  }
+  val n = '{ Mut(3) }
+  val y = plus(n)
+  println(y.show)
+  y
+}
+
 /*
 def stuck(using Quotes): Expr[Int => Int] = {
   val t = '{
@@ -83,6 +96,16 @@ def stuck(using Quotes): Expr[Int => Int] = {
   println(pow3(3))
 
   // code/effect duplication
+  {
+    val y = staging.run { dup }
+    println(y)
+  }
+
+  {
+    val y = staging.run { dupStore }
+    println(y)
+  }
+
   {
     val y = staging.run { dup }
     println(y)

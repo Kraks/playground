@@ -9,7 +9,6 @@ enum Term:
   case App(t1: Term, t2: Term)
   case Lam(x: String, t: Term)
 
-
 package unstaged {
 enum Value:
   case IntV(i: Int)

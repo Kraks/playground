@@ -392,6 +392,215 @@ lemma fundamental : ∀ Γ t τ,
   case app t1 t2 τ1 τ2 ih1 ih2 =>
     apply semApp; assumption; assumption
 
+-- neutral normality
 
+inductive neutral : tm → Prop
+| var : ∀ x, neutral (.fvar x)
+| app : ∀ t1 t2, neutral t1 → normalizable t2 → neutral (.app t1 t2)
+
+lemma absBetaNorm : ∀ t1, (∀ t2, ¬step t1.abs t2) → ∀ t3, ¬step t1 t3 := by
+  intros t1 st1 t3 st2;
+  have st3 : step t1.abs t3.abs := by apply step.lam; assumption
+  specialize st1 t3.abs
+  exact st1 st3
+
+lemma βnormApp : ∀ t1 t2, βnorm (.app t1 t2) → βnorm t1 ∧ βnorm t2 := by
+  intros t1 t2 h; simp at *; constructor
+  intros x st; have h' := step.app1 t1 x t2 st; aesop
+  intros x st; have h' := step.app2 t1 t2 x st; aesop
+
+lemma stepnVar : ∀ x t, stepn (.fvar x) t → t = .fvar x := by
+  intros x t hstepn; induction hstepn
+  . simp
+  . expose_names; rw [a_ih] at h_1; cases h_1
+
+/--
+lemma stepNeutral : ∀ t1 t2, stepn t1 t2 → neutral t1 →
+  (∃ x, t2 = .fvar x) ∨ (∃ t3 t4, t2 = .app t3 t4) := by
+  intros t1 t2 hstepn hneu
+  cases hneu
+  . expose_names; apply stepnVar at hstepn; aesop
+  . expose_names; right;
+--/
+
+lemma βnormNormalizable : ∀ t, βnorm t → normalizable t := by
+  intros t h; induction t <;> simp
+  . exists .fls; constructor; apply stepn.refl; intros x st; cases st
+  . exists .tru; constructor; apply stepn.refl; intros x st; cases st
+  . expose_names; exists (.bvar a); constructor; apply stepn.refl; intros x st; cases st
+  . expose_names; exists (.fvar a); constructor; apply stepn.refl; intros x st; cases st
+  . expose_names; exists (.abs a); constructor; apply stepn.refl; intros x st; aesop
+  . expose_names; exists (.app a a_1); constructor; apply stepn.refl; intros x st; aesop
+
+lemma betaNormVarNeu : ∀ x, βnorm (.fvar x) → neutral (.fvar x) := by
+  intros x h; constructor
+
+/--
+lemma betaNormAppNeu : ∀ t1 t2, βnorm (.app t1 t2) → neutral (.app t1 t2) := by
+  intros t1 t2 h1
+  have nm : normalizable (.app t1 t2) := by apply βnormNormalizable; assumption
+  apply βnormApp at h1; rcases h1 with ⟨h2, h3⟩
+  constructor;
+  apply βnormNormalizable; assumption
+
+lemma stepNeutral : ∀ t1, neutral t1 → ∀ t2, stepn t1 t2 →
+  ¬ (∃ x, t2 = .abs x) := by
+  intros t1 hneu
+  induction hneu
+  . sorry
+  . expose_names;
+-/
+
+
+lemma stepPreservesNeutral : ∀ t1 t2, step t1 t2 → neutral t1 → neutral t2 := by
+  intros t1 t2 hst hneu
+  induction hst
+  . case beta t3 t4 => cases hneu; expose_names; cases h
+  . case app1 t3 t4 t5 hst ih =>
+    cases hneu; constructor; apply ih; assumption; assumption
+  . case app2 t3 t4 t5 hst ih =>
+    cases hneu; constructor; assumption; expose_names;
+    sorry
+  . case lam t3 t4 hst ih => cases hneu
+
+lemma stepnPreservesNeutral : ∀ t1 t2, stepn t1 t2 → neutral t1 → neutral t2 := by
+  intros t1 t2 hstepn hneu
+  induction hstepn
+  . assumption
+  . case multi t2 t3 t1st t3st t4ne =>
+    apply stepPreservesNeutral; assumption; apply t4ne
+
+/--
+lemma normalizableApp : ∀ t1 t2, neutral t1 → normalizable t1 → normalizable t2 →
+  normalizable (.app t1 t2) := by
+  intros t1 t2 hne1 hnm1 hnm2
+  rcases hnm1 with ⟨t1', hstn1, hnorm1⟩
+  rcases hnm2 with ⟨t2', hstn2, hnorm2⟩
+  exists (t1'.app t2'); constructor
+  apply stepnTrans; apply stepnApp1; assumption
+  apply stepnApp2; assumption
+  intro st; rcases st with ⟨x, hst⟩
+  have hst' := hst
+  induction hne1 generalizing t1'
+  . sorry
+  . expose_names;
+-/
+
+lemma neutralNormalizable : ∀ t, neutral t → normalizable t := by
+  intros t h; induction t <;> try cases h
+  case var x =>
+    exists (.fvar x); constructor; apply stepn.refl; simp; intros x st; cases st
+  case app t1 t2 ih1 ih2 t1ne t2nm =>
+    rcases (ih1 t1ne) with ⟨t1', hstn1, hnorm1⟩
+    rcases t2nm with ⟨t2', hstn2, hnorm2⟩
+    simp; exists (t1'.app t2'); constructor
+    apply stepnTrans; apply stepnApp1; assumption
+    apply stepnApp2; assumption
+    intros x st;
+    have t1'ne : neutral t1' := by
+      apply stepnPreservesNeutral; assumption; assumption
+    cases st; cases t1'ne; aesop; aesop
+
+/---
+  induction h
+  case var x => simp; sorry
+  case app t1 t2 t1ne t2nm t1nm =>
+    rcases t1nm with ⟨t1', hstn1, hnorm1⟩
+    rcases t2nm with ⟨t2', hstn2, hnorm2⟩
+    simp; exists (t1'.app t2'); constructor
+    apply stepnTrans; apply stepnApp1; assumption
+    apply stepnApp2; assumption;
+    -- t1' is neutral too
+    have t1'ne : neutral t1' := by apply stepPreservesNeutral; assumption; assumption; assumption
+    match t1'ne with
+    | neutral.var x =>
+      intros x st; cases st <;> expose_names; cases h
+      unfold βnorm at hnorm2; aesop
+    | neutral.app t1'' t2'' t1ne' t2nm' =>
+      intros x st; cases st <;> expose_names;
+      unfold βnorm at hnorm1; aesop
+      unfold βnorm at hnorm2; aesop
+--/
+
+lemma hasTypeClosed : ∀ Γ t τ, hasType Γ t τ → closedB t 0 := by
+  intros Γ t τ h; induction h <;> simp
+  case abs => apply openClosed; assumption
+  case app => apply And.intro <;> assumption
+
+@[simp]
+def mkIdSubst (Γ : tenv) : venv :=
+  match Γ with
+  | [] => []
+  | _ :: Γ' => (.fvar Γ'.length) :: mkIdSubst Γ'
+
+example: mkIdSubst [ty.bool, ty.bool] = [.fvar 1, .fvar 0] := by simp
+
+lemma semVar' : ∀ Γ x τ, binds x τ Γ → HN Γ (.fvar x) τ := by
+  intros Γ x τ bd;
+  apply semVar at bd; unfold semType at bd;
+  specialize bd Γ
+
+lemma idSubstEnvType : ∀ Γ, envType Γ Γ (mkIdSubst Γ) := by
+  intros Γ;
+  constructor; sorry
+  intros τ x bd; exists (.fvar x)
+  constructor; sorry
+  constructor; constructor; apply semVar'; assumption
+
+
+/--
+lemma pasDeDeux' : ∀ Γ τ,
+  ((∀ t1, hasType Γ t1 τ → neutral t1 → HN Γ t1 τ) <->
+   (∀ t2, hasType Γ t2 τ → HN Γ t2 τ → normalizable t2)) := by
+  intros Γ τ; induction τ generalizing Γ
+  constructor
+  . intros h1 t hty hhn; assumption
+  . intros h1 t hty hne;
+
+  constructor
+  . case arrow τ1 τ2 ih1 ih2 =>
+    intros h1 t hty hhn; sorry
+  . case arrow τ1 τ2 ih1 ih2 =>
+    intros h1 t hty heu;
+    unfold HN; intros Γ' t1 ext cl hnt1'
+    sorry
+--/
+
+
+lemma pasDeDeux : ∀ Γ τ t1 t2, hasType Γ t1 τ → hasType Γ t2 τ →
+  (neutral t1 → HN Γ t1 τ) ∧ (HN Γ t2 τ → normalizable t2) := by
+  intros Γ τ t1 t2 hty1 hty2
+  induction τ generalizing Γ t1 t2
+  case bool =>
+    constructor
+    . intros hnt; have hty1' := hty1
+      apply fundamental at hty1';
+      unfold semType at hty1'
+      have hn := hty1' Γ (mkIdSubst Γ) (hasTypeClosed _ _ _ hty1) (idSubstEnvType _)
+      sorry
+      --apply neutralNormalizable; assumption
+    . intros hhn; assumption
+  case arrow τ1 τ2 ih1 ih2 =>
+    constructor
+    . intros t1ne; unfold HN; intros Γ' t1' ext cl hnt1'
+      have t1'nm : normalizable t1' := by
+        specialize ih1 Γ' t1' t1' sorry sorry
+        aesop
+      have neapp : neutral (.app t1 t1') := by
+        constructor; assumption; assumption
+      specialize ih2 Γ' (t1.app t1') (t1.app t1') sorry sorry
+      aesop
+    . intros t2hn; unfold HN at t2hn;
+      set Γ' := (τ1::Γ)
+      have ext : Γ ≤ Γ' := by sorry
+
+
+theorem normalization : ∀ Γ t τ, hasType Γ t τ → βnorm t := by
+  intros Γ t τ hty
+  have hsem := fundamental Γ t τ hty
+  have cl := hasTypeClosed Γ t τ hty
+  specialize hsem Γ sorry cl sorry
+  have hv' := pasDeDeux Γ τ t t hty hty
+  apply hv'.2; assumption
 
 end Smallstep_Equiv_Beta
