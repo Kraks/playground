@@ -4,6 +4,8 @@
 -- small-step semantics and binary logical relations
 -- contextual equivalence
 
+-- XXX: UNFINISHED
+
 import Mathlib.Data.Finset.Sort
 import STLC.Env
 

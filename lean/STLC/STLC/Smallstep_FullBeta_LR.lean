@@ -3,6 +3,8 @@
 -- small-step semantics and unary logical relation
 -- following Kripke-Style Logical Relations for Normalization, Robert Harper
 
+-- XXX: UNFINISHED
+
 import Mathlib.Data.Finset.Sort
 import STLC.Env
 

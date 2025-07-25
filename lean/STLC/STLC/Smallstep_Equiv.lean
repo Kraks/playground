@@ -89,7 +89,7 @@ lemma openClosed : ∀ t n m,
     . by_cases hx': (x < m)
       omega; unfold openSubst at h;
       rw [if_neg hx] at h; have hx'' : (m < x) := by omega;
-      simp [hx''] at h; omega
+      simp at h; omega
   case abs t ih =>
     apply ih n (m+1); unfold openSubst at h; simp at h; assumption
   case app t1 t2 ih1 ih2 =>

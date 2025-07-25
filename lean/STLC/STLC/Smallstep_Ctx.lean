@@ -71,11 +71,11 @@ by
   induction e generalizing j v i u
   case bvar k =>
     by_cases hjk: (j = k)
-    . rw [hjk] at H; simp at H; rw [hjk] at hneq; simp; rw [if_neg hneq]
+    . rw [hjk] at H; simp at H; rw [hjk] at hneq; simp; grind
     . simp; simp at H; rw [if_neg hjk] at H;
       by_cases hik: (i = k)
       . rw [hik]; simp; simp at H; rw [hik] at H; simp at H; assumption
-      . rw [if_neg hik]
+      . grind
   case fvar k => simp
   case abs t ih => simp; simp at H; apply (@ih (j + 1)); simp; assumption; assumption
   case app t₁ t₂ ih₁ ih₂ =>
@@ -88,10 +88,10 @@ by
 -- From https://github.com/ElifUskuplu/Stlc_deBruijn/blob/main/Stlc/basics.lean
 -- We can always pick a fresh variable for a given term out of a fixed set.
 lemma pick_fresh (t : tm) (L : Finset ℕ) : ∃ (x : ℕ), x ∉ (L ∪ fv t) := by
-  exact Infinite.exists_not_mem_finset (L ∪ fv t)
+  exact Infinite.exists_notMem_finset (L ∪ fv t)
 
 lemma pick_fresh' (L : Finset ℕ) : ∃ (x : ℕ), x ∉ L := by
-  exact Infinite.exists_not_mem_finset L
+  exact Infinite.exists_notMem_finset L
 
 -- index substitution has no effect on locally closed term
 lemma openRecLc0 : ∀ i u e, lc e → e = openRec i u e := by
@@ -165,7 +165,7 @@ def inEnv(x : ℕ) : env → Prop
 
 lemma memDomIffInEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
   induction Γ
-  case nil => simp [Finset.not_mem_empty]
+  case nil => simp [Finset.notMem_empty]
   case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
 
 inductive envOk : env → Prop
@@ -251,7 +251,7 @@ lemma bindsEqMid x τ1 τ2 Γ1 Γ2 :
         . simp; simp [heq] at hbd; simp at hctx'
           have hneq := inCtxNeg' hd x τ2 tl Γ1 hctx';
           symm at hneq; contradiction
-        . simp [if_neg, heq] at hbd; simp; assumption
+        . simp [heq] at hbd; simp; assumption
       . assumption
 
 lemma bindsNeqRemoveMid x y τ1 τ2 Γ1 Γ2 :
