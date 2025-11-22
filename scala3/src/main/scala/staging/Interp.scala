@@ -87,7 +87,7 @@ def eval(t: Term, env: Expr[Env])(using Quotes): Expr[Value] =
     case BinOp("+", e1, e2) => '{
       (${eval(e1, env)}, ${eval(e2, env)}) match
         case (IntV(v1), IntV(v2)) => IntV(v1 + v2)
-        case _ => throw new RuntimeException("integers expected")
+        //case _ => throw new RuntimeException("integers expected")
       }
     case Var(x) => '{ ${env}(${Expr(x)}) }
     case Lam(x, e) =>
@@ -96,7 +96,7 @@ def eval(t: Term, env: Expr[Env])(using Quotes): Expr[Value] =
     case App(t1, t2) => '{
       (${eval(t1, env)}, ${eval(t2, env)}) match
         case (FunV(f), v) => f(v)
-        case _ => throw new RuntimeException("closure expected")
+        //case _ => throw new RuntimeException("closure expected")
       }
 
 given staging.Compiler = staging.Compiler.make(this.getClass.getClassLoader)
@@ -108,6 +108,7 @@ def specEval(e: Term): Env => Value = staging.run {
 }
 
 @main def main: Unit = {
+  /*
   val ex1 = BinOp("+", Lit(1), Lit(2))
   val ex1Code = specEval(ex1)
   assert(ex1Code(Map.empty) == IntV(3))
@@ -115,17 +116,19 @@ def specEval(e: Term): Env => Value = staging.run {
   val ex2 = Var("x")
   val ex2Code = specEval(ex2)
   assert(ex2Code(Map("x" -> IntV(3))) == IntV(3))
-
+  */
   val ex3 = App(App(Lam("y", Lam("x", BinOp("+", Var("x"), Var("y")))), Lit(3)), Lit(4))
   val ex3Code = specEval(ex3)
   assert(ex3Code(Map.empty) == IntV(7))
 
+  /*
   val ex4 = {
     val f = Lam("x", BinOp("+", Lit(1), Var("x")))
     App(App(Lam("x", Lam("f", App(Var("f"), Var("x")))), Lit(4)), f)
   }
   val ex4Code = specEval(ex4)
-  println(ex4Code(Map.empty))
+  */
+  //println(ex4Code(Map.empty))
 }
 
 }

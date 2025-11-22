@@ -4,6 +4,8 @@ import scala.quoted.*
 
 given staging.Compiler = staging.Compiler.make(this.getClass.getClassLoader)
 
+case class Mut[T](var x: T)
+
 def unrolledPowerCode(x: Expr[Double], n: Int)(using Quotes): Expr[Double] =
   if n == 0 then '{ 1.0 }
   else if n == 1 then x
@@ -44,6 +46,7 @@ def specPower(n: Int): Double => Double = staging.run {
 }
 
 def dup(using Quotes): Expr[Int] = {
+
   def plus(x: Expr[Int])(using Quotes): Expr[Int] = {
     '{ $x + $x }
   }
@@ -68,14 +71,12 @@ def dup(using Quotes): Expr[Int] = {
   */
 }
 
-case class Mut(var x: Int)
-
 def dupStore(using Quotes): Expr[Int] = {
-  def plus(v: Expr[Mut])(using Quotes): Expr[Int] = '{
+  def plus(v: Expr[Mut[Int]])(using Quotes): Expr[Int] = '{
     ${v}.x = 4
     ${v}.x
   }
-  val n = '{ Mut(3) }
+  val n = '{ Mut[Int](3) }
   val y = plus(n)
   println(y.show)
   y
@@ -91,10 +92,31 @@ def stuck(using Quotes): Expr[Int => Int] = {
 }
 */
 
+def impPower(x: Expr[Double], n: Int, result: Expr[Mut[Double]])(using Quotes): Expr[Double] =
+  if n == 0 then '{ ${result}.x }
+  else '{
+    ${result}.x = $x * ${result}.x;
+    ${impPower(x, n - 1, result)}
+  }
+
+def specImpPower(n: Int): Double => Double = staging.run {
+  val stagedPower: Expr[Double => Double] =
+    val res = '{ Mut[Double](1.0) }
+    '{ (x: Double) =>
+        ${impPower('x, n, res)}
+      }
+  println(stagedPower.show)
+  stagedPower
+}
+
 @main def main: Unit = {
-  val pow3 = specPower(3)
+  //val pow3 = specPower(3)
+  //println(pow3(3))
+
+  val pow3 = specImpPower(2)
   println(pow3(3))
 
+  /*
   // code/effect duplication
   {
     val y = staging.run { dup }
@@ -111,4 +133,5 @@ def stuck(using Quotes): Expr[Int => Int] = {
     println(y)
   }
 
+  */
 }
