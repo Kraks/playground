@@ -5,3 +5,5 @@ import STLC.Smallstep
 import STLC.Smallstep_Ctx
 import STLC.Smallstep_LR
 import STLC.Smallstep_Equiv
+import STLC.Smallstep_Equiv_CBN
+import STLC.Smallstep_Ref_Equiv

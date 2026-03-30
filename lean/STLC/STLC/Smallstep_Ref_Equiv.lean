@@ -280,10 +280,10 @@ inductive hasType : stty → tenv → tm → ty → Prop
 | ref : ∀ Φ Γ t,
   hasType Φ Γ t (.bool) →
   hasType Φ Γ (.ref t) (.ref .bool)
-| deref : ∀ Φ Γ t τ,
+| deref : ∀ Φ Γ t,
   hasType Φ Γ t (.ref .bool) →
   hasType Φ Γ (.deref t) .bool
-| assign : ∀ Φ Γ t₁ t₂ τ,
+| assign : ∀ Φ Γ t₁ t₂,
   hasType Φ Γ t₁ (.ref .bool) →
   hasType Φ Γ t₂ .bool →
   hasType Φ Γ (.assign t₁ t₂) .bool -- for simplicity, we use bool for the result, could be unit
@@ -453,7 +453,7 @@ def storeType (σ1 σ2 : st) (m : st_rel) : Prop :=
 def valType (m: st_rel) (t1 : tm) (t2 : tm) (τ : ty) : Prop :=
   match t1, t2, τ with
   | .bool b1, .bool b2, .bool => b1 = b2
-  | .loc n1, .loc n2, .ref τ => m n1 n2
+  | .loc n1, .loc n2, .ref _ => m n1 n2
   | (.abs t1), (.abs t2), .arrow τ1 τ2 =>
     ∀ v1 v2 m1 st1 st2,
     m ≥ m1 →

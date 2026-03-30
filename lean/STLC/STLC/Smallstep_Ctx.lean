@@ -134,8 +134,8 @@ lemma substLc : ∀ (x : ℕ) u e, lc e → lc u → lc (substF x u e) := by
     . rw [if_neg h]; constructor
   case lc_abs L t h ih =>
     simp; apply (lc.lc_abs (L ∪ {x}))
-    intro y hy; simp at hy; push_neg at hy; rw [substOpenVar];
-    apply ih; exact hy.left; assumption; exact hy.right; assumption
+    intro y hy; simp at hy; push Not at hy; rw [substOpenVar];
+    apply ih; exact hy.right; assumption; exact hy.left; assumption
   case lc_app t1 t2 ht1 ht2 => simp; constructor; apply ht1; assumption; apply ht2; assumption
 
 lemma substIntro (x : ℕ) u e:
@@ -166,7 +166,7 @@ def inEnv(x : ℕ) : env → Prop
 lemma memDomIffInEnv(a : ℕ) (Γ : env) : a ∈ dom Γ ↔ inEnv a Γ := by
   induction Γ
   case nil => simp [Finset.notMem_empty]
-  case cons b Γ' f => simp [Finset.mem_union, Finset.mem_singleton]; rw [f]
+  case cons b Γ' f => simp; rw [f]
 
 inductive envOk : env → Prop
 | envOK_mt : envOk []
@@ -236,7 +236,7 @@ lemma inEnvNegMid x y τ Γ1 Γ2 :
 lemma inCtxNeg' x y τ Γ1 Γ2 :
   ¬ (inEnv x (Γ1 ++ (y,τ) :: Γ2)) → x ≠ y := by
   intro hctx; let ⟨hc1, hc2⟩ := inCtxNeg x Γ1 ((y,τ) :: Γ2) hctx;
-  by_contra; next heq => simp [heq] at hc2
+  by_contra; simp [this] at hc2
 
 lemma bindsEqMid x τ1 τ2 Γ1 Γ2 :
   binds x τ1 (Γ2 ++ (x, τ2) :: Γ1) →
@@ -354,12 +354,12 @@ lemma typingSubst'' Γ1 Γ2 e u τ1 τ2 x :
     assumption; rw [hg] at hctx; assumption; assumption
   case t_abs L Γ t τ₁ τ₂ ih1 ih2 =>
     intro Γ3 hg h2 h3; apply hasType.t_abs (L ∪ (dom (Γ3 ++ Γ1)) ∪ {x})
-    intro y hyn; rw [substOpenVar]; simp at hyn; push_neg at hyn;
+    intro y hyn; rw [substOpenVar]; simp at hyn; push Not at hyn;
     rw [← List.nil_append ((y, τ₁) :: (Γ3 ++ Γ1)), List.append_cons,
         List.nil_append, ← List.append_assoc]
-    apply ih2 y hyn.1; simp; assumption
-    rw [hg] at ih1; apply ih1; exact hyn.1; assumption
-    simp at hyn; push_neg at hyn; exact hyn.2.2; apply typingLc; assumption
+    apply ih2 y hyn.2.1; simp; assumption
+    rw [hg] at ih1; apply ih1; exact hyn.2.1; assumption
+    simp at hyn; push Not at hyn; exact hyn.1; apply typingLc; assumption
   case t_app Γ t1 t2 τ₁ τ₂ ht1 ht2 ih1 ih2 =>
     intro Γ3 hg h2 h3; apply hasType.t_app
     apply ih1; assumption; simp [<- hg]; assumption; assumption

@@ -93,7 +93,7 @@ lemma openClosed : ∀ t n m,
     . by_cases hx': (x < m)
       omega; unfold openSubst at h;
       rw [if_neg hx] at h; have hx'' : (m < x) := by omega;
-      simp [hx''] at h; omega
+      simp at h; omega
   case abs t ih =>
     apply ih n (m+1); unfold openSubst at h; simp at h; assumption
   case app t1 t2 ih1 ih2 =>
@@ -351,7 +351,7 @@ lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
   apply stepnTrans; apply stepnApp1; assumption
   apply stepnTrans; apply stepnApp2; constructor; assumption
   have stbeta : step (f1t.abs.app v3) (openSubst f1t 0 v3) :=
-    by apply step.beta; exact (valTypeValue _ _ _ hv34).1
+    by apply step.beta
   apply stepnTrans; apply stepn.multi; apply stepn.refl
   apply stbeta; apply hst5;
   --
@@ -359,7 +359,7 @@ lemma semApp : ∀ Γ f1 f2 t1 t2 τ1 τ2,
   apply stepnTrans; apply stepnApp1; assumption
   apply stepnTrans; apply stepnApp2; constructor; assumption
   have stbeta : step (f2t.abs.app v4) (openSubst f2t 0 v4) :=
-    by apply step.beta; exact (valTypeValue _ _ _ hv34).2
+    by apply step.beta
   apply stepnTrans; apply stepn.multi; apply stepn.refl
   apply stbeta; apply hst6;
   exact ⟨hcl5, hcl6, hv56⟩

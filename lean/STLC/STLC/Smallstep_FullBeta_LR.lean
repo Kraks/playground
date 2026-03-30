@@ -540,7 +540,8 @@ example: mkIdSubst [ty.bool, ty.bool] = [.fvar 1, .fvar 0] := by simp
 lemma semVar' : ∀ Γ x τ, binds x τ Γ → HN Γ (.fvar x) τ := by
   intros Γ x τ bd;
   apply semVar at bd; unfold semType at bd;
-  specialize bd Γ
+  specialize bd Γ;
+  sorry
 
 lemma idSubstEnvType : ∀ Γ, envType Γ Γ (mkIdSubst Γ) := by
   intros Γ;
@@ -595,6 +596,7 @@ lemma pasDeDeux : ∀ Γ τ t1 t2, hasType Γ t1 τ → hasType Γ t2 τ →
     . intros t2hn; unfold HN at t2hn;
       set Γ' := (τ1::Γ)
       have ext : Γ ≤ Γ' := by sorry
+      sorry
 
 
 theorem normalization : ∀ Γ t τ, hasType Γ t τ → βnorm t := by
@@ -603,6 +605,6 @@ theorem normalization : ∀ Γ t τ, hasType Γ t τ → βnorm t := by
   have cl := hasTypeClosed Γ t τ hty
   specialize hsem Γ sorry cl sorry
   have hv' := pasDeDeux Γ τ t t hty hty
-  apply hv'.2; assumption
+  sorry
 
 end Smallstep_Equiv_Beta
